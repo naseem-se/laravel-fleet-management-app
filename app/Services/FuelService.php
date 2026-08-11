@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Driver;
+use App\Models\FuelEntry;
+use App\Services\Concerns\StoresPhotos;
+use Illuminate\Support\Facades\DB;
+
+class FuelService
+{
+    use StoresPhotos;
+
+    public function create(Driver $driver, array $data): FuelEntry
+    {
+        return DB::transaction(function () use ($driver, $data) {
+            $receiptPath = $this->storePhoto($data['receipt_photo'], $driver->company_id, 'fuel-receipts');
+
+            return FuelEntry::create([
+                'vehicle_id' => $data['vehicle_id'],
+                'journey_id' => $data['journey_id'] ?? null,
+                'driver_id' => $driver->id,
+                'quantity_litres' => $data['quantity_litres'],
+                'rate_per_litre' => $data['rate_per_litre'],
+                'total_cost' => round($data['quantity_litres'] * $data['rate_per_litre'], 2),
+                'odometer_reading' => $data['odometer_reading'],
+                'receipt_photo_path' => $receiptPath,
+                'entry_time' => now(),
+            ]);
+        });
+    }
+}

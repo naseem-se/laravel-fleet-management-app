@@ -1,0 +1,159 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Driver;
+use App\Models\FuelEntry;
+use App\Models\MaintenanceRecord;
+use App\Models\Vehicle;
+use Carbon\Carbon;
+
+class ReportService
+{
+    public function vehicleReport(Vehicle $vehicle, string $from, string $to): array
+    {
+        [$fromDt, $toDt] = $this->dayBounds($from, $to);
+
+        $journeys = $vehicle->journeys()
+            ->where('status', 'completed')
+            ->whereBetween('start_time', [$fromDt, $toDt]);
+
+        $fuel = $vehicle->fuelEntries()->whereBetween('entry_time', [$fromDt, $toDt]);
+        $maintenance = $vehicle->maintenanceRecords()->whereBetween('service_date', [$from, $to]);
+
+        $totalDistance = (clone $journeys)->sum('total_distance');
+        $totalFuelLitres = (clone $fuel)->sum('quantity_litres');
+        $totalFuelCost = (clone $fuel)->sum('total_cost');
+        $totalMaintenanceCost = (clone $maintenance)->sum('cost');
+
+        return [
+            'vehicle' => [
+                'id' => $vehicle->id,
+                'registration_number' => $vehicle->registration_number,
+                'make' => $vehicle->make,
+                'model' => $vehicle->model,
+            ],
+            'period' => ['from' => $from, 'to' => $to],
+            'total_journeys' => (clone $journeys)->count(),
+            'total_distance' => (float) $totalDistance,
+            'total_fuel_litres' => (float) $totalFuelLitres,
+            'total_fuel_cost' => (float) $totalFuelCost,
+            'kmpl' => $totalFuelLitres > 0 ? round($totalDistance / $totalFuelLitres, 2) : null,
+            'fuel_cost_per_km' => $totalDistance > 0 ? round($totalFuelCost / $totalDistance, 2) : null,
+            'total_maintenance_cost' => (float) $totalMaintenanceCost,
+            'journeys' => $journeys->get(['id', 'start_time', 'end_time', 'start_km', 'end_km', 'total_distance']),
+        ];
+    }
+
+    public function driverReport(Driver $driver, string $from, string $to): array
+    {
+        [$fromDt, $toDt] = $this->dayBounds($from, $to);
+
+        $journeys = $driver->journeys()
+            ->where('status', 'completed')
+            ->whereBetween('start_time', [$fromDt, $toDt]);
+
+        $fuel = $driver->fuelEntries()->whereBetween('entry_time', [$fromDt, $toDt]);
+
+        return [
+            'driver' => ['id' => $driver->id, 'name' => $driver->name, 'phone' => $driver->phone],
+            'period' => ['from' => $from, 'to' => $to],
+            'total_journeys' => (clone $journeys)->count(),
+            'total_distance' => (float) (clone $journeys)->sum('total_distance'),
+            'total_fuel_litres' => (float) (clone $fuel)->sum('quantity_litres'),
+            'total_fuel_cost' => (float) (clone $fuel)->sum('total_cost'),
+            'journeys' => $journeys->with('vehicle:id,registration_number')->get(),
+        ];
+    }
+
+    public function fuelReport(string $from, string $to, ?int $vehicleId = null): array
+    {
+        [$fromDt, $toDt] = $this->dayBounds($from, $to);
+
+        $query = FuelEntry::query()
+            ->whereBetween('entry_time', [$fromDt, $toDt])
+            ->with(['vehicle:id,registration_number', 'driver:id,name']);
+
+        if ($vehicleId) {
+            $query->where('vehicle_id', $vehicleId);
+        }
+
+        $entries = $query->orderBy('entry_time')->get();
+
+        return [
+            'period' => ['from' => $from, 'to' => $to],
+            'total_litres' => (float) $entries->sum('quantity_litres'),
+            'total_cost' => (float) $entries->sum('total_cost'),
+            'entries' => $entries,
+        ];
+    }
+
+    public function maintenanceReport(string $from, string $to, ?int $vehicleId = null): array
+    {
+        $query = MaintenanceRecord::query()
+            ->whereBetween('service_date', [$from, $to])
+            ->with('vehicle:id,registration_number');
+
+        if ($vehicleId) {
+            $query->where('vehicle_id', $vehicleId);
+        }
+
+        $records = $query->orderBy('service_date')->get();
+
+        return [
+            'period' => ['from' => $from, 'to' => $to],
+            'total_cost' => (float) $records->sum('cost'),
+            'records' => $records,
+        ];
+    }
+
+    /** Monthly fleet-wide summary — the Company Admin dashboard's headline numbers. */
+    public function fleetSummary(string $month): array
+    {
+        $start = Carbon::parse($month.'-01')->startOfMonth();
+        $end = (clone $start)->endOfMonth();
+
+        $journeys = \App\Models\Journey::where('status', 'completed')
+            ->whereBetween('start_time', [$start, $end]);
+
+        $fuel = FuelEntry::whereBetween('entry_time', [$start, $end]);
+        $maintenance = MaintenanceRecord::whereBetween('service_date', [$start->toDateString(), $end->toDateString()]);
+
+        $totalDistance = (clone $journeys)->sum('total_distance');
+        $totalFuelLitres = (clone $fuel)->sum('quantity_litres');
+
+        return [
+            'month' => $start->format('Y-m'),
+            'vehicles' => [
+                'total' => Vehicle::count(),
+                'active' => Vehicle::where('status', 'active')->count(),
+                'inactive' => Vehicle::where('status', 'inactive')->count(),
+                'maintenance' => Vehicle::where('status', 'maintenance')->count(),
+            ],
+            'total_journeys' => (clone $journeys)->count(),
+            'total_distance' => (float) $totalDistance,
+            'total_fuel_litres' => (float) $totalFuelLitres,
+            'total_fuel_cost' => (float) (clone $fuel)->sum('total_cost'),
+            'fleet_avg_kmpl' => $totalFuelLitres > 0 ? round($totalDistance / $totalFuelLitres, 2) : null,
+            'total_maintenance_cost' => (float) (clone $maintenance)->sum('cost'),
+            'per_vehicle' => Vehicle::withSum(['journeys as month_distance' => fn ($q) =>
+                    $q->where('status', 'completed')->whereBetween('start_time', [$start, $end]),
+                ], 'total_distance')
+                ->withSum(['fuelEntries as month_fuel_litres' => fn ($q) =>
+                    $q->whereBetween('entry_time', [$start, $end]),
+                ], 'quantity_litres')
+                ->get(['id', 'registration_number'])
+                ->map(fn ($v) => [
+                    'vehicle' => $v->registration_number,
+                    'distance' => (float) ($v->month_distance ?? 0),
+                    'fuel_litres' => (float) ($v->month_fuel_litres ?? 0),
+                    'kmpl' => $v->month_fuel_litres > 0 ? round($v->month_distance / $v->month_fuel_litres, 2) : null,
+                ]),
+        ];
+    }
+
+    protected function dayBounds(string $from, string $to): array
+    {
+        return ["{$from} 00:00:00", "{$to} 23:59:59"];
+    }
+}
