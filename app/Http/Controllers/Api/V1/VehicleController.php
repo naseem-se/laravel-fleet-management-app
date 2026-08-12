@@ -72,6 +72,7 @@ class VehicleController extends Controller
         $this->authorize('view', $vehicle);
 
         $vehicle->load([
+            'assignedDriver', // was missing — this is why the detail page showed no assigned driver
             'journeys' => fn ($q) => $q->latest('start_time')->limit(50),
             'fuelEntries' => fn ($q) => $q->latest('entry_time')->limit(50),
             'maintenanceRecords' => fn ($q) => $q->latest('service_date')->limit(50),

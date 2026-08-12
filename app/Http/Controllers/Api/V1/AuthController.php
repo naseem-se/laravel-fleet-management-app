@@ -15,7 +15,7 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
-        $user = User::with('company')->where('email', $credentials['email'])->first();
+        $user = User::with(['company', 'driver'])->where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -65,6 +65,6 @@ class AuthController extends Controller
 
     public function me()
     {
-        return new UserResource(request()->user()->load('company'));
+        return new UserResource(request()->user()->load(['company', 'driver']));
     }
 }

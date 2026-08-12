@@ -13,6 +13,10 @@ class FuelEntryResource extends JsonResource
         return [
             'id' => $this->id,
             'vehicle_id' => $this->vehicle_id,
+            'vehicle' => $this->whenLoaded('vehicle', fn () => [
+                'id' => $this->vehicle->id,
+                'registration_number' => $this->vehicle->registration_number,
+            ]),
             'journey_id' => $this->journey_id,
             'driver_id' => $this->driver_id,
             'quantity_litres' => $this->quantity_litres,

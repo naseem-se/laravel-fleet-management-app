@@ -56,22 +56,22 @@ class JourneyService
             ]);
         }
 
-        $location = $journey->locations()->create([
-            'lat' => $data['lat'],
-            'lng' => $data['lng'],
-            'speed_kmh' => $data['speed_kmh'] ?? null,
-            'recorded_at' => $data['recorded_at'] ?? now(),
-        ]);
+        return DB::transaction(function () use ($journey, $data) {
+            $location = $journey->locations()->create([
+                'lat' => $data['lat'],
+                'lng' => $data['lng'],
+                'speed_kmh' => $data['speed_kmh'] ?? null,
+                'recorded_at' => $data['recorded_at'] ?? now(),
+            ]);
 
-        // Denormalized cache on the vehicle so the admin dashboard's "current
-        // location" read never has to scan journey_locations.
-        $journey->vehicle()->update([
-            'last_lat' => $data['lat'],
-            'last_lng' => $data['lng'],
-            'last_location_at' => $location->recorded_at,
-        ]);
+            $journey->vehicle()->update([
+                'last_lat' => $data['lat'],
+                'last_lng' => $data['lng'],
+                'last_location_at' => $location->recorded_at,
+            ]);
 
-        return $location;
+            return $location;
+        });
     }
 
     public function end(Journey $journey, array $data): Journey

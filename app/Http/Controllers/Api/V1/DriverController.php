@@ -87,4 +87,17 @@ class DriverController extends Controller
             'total_fuel_cost' => (clone $fuel)->sum('total_cost'),
         ]);
     }
+
+    public function createLogin(\App\Http\Requests\Driver\StoreDriverLoginRequest $request, Driver $driver)
+    {
+        $driver = $this->drivers->createLogin($driver, $request->validated());
+
+        return new DriverResource($driver);
+    }
+    public function updateLogin(\App\Http\Requests\Driver\UpdateDriverLoginRequest $request, Driver $driver)
+    {
+        $driver = $this->drivers->updateLogin($driver, $request->validated());
+
+        return new DriverResource($driver);
+    }
 }

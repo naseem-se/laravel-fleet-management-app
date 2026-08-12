@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VehicleDocument\StoreVehicleDocumentRequest;
+use App\Http\Requests\VehicleDocument\UpdateVehicleDocumentRequest;
 use App\Http\Resources\VehicleDocumentResource;
 use App\Models\VehicleDocument;
 use App\Services\VehicleDocumentService;
@@ -24,6 +25,13 @@ class VehicleDocumentController extends Controller
             ->setStatusCode(201);
     }
 
+    public function update(UpdateVehicleDocumentRequest $request, VehicleDocument $vehicleDocument)
+    {
+        $document = $this->documents->update($vehicleDocument, $request->validated());
+
+        return new VehicleDocumentResource($document);
+    }
+
     public function destroy(VehicleDocument $vehicleDocument)
     {
         $this->authorize('delete', $vehicleDocument);
@@ -33,7 +41,6 @@ class VehicleDocumentController extends Controller
         return response()->json(['message' => 'Document deleted.']);
     }
 
-    /** Fleet-wide expiring documents, for the dashboard alerts widget. */
     public function expiring(Request $request)
     {
         $this->authorize('viewAny', VehicleDocument::class);

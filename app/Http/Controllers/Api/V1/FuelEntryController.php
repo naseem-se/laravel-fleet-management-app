@@ -45,4 +45,22 @@ class FuelEntryController extends Controller
             $query->latest('entry_time')->paginate((int) $request->input('per_page', 20))
         );
     }
+    public function storeAdmin(\App\Http\Requests\Fuel\StoreFuelEntryAdminRequest $request)
+    {
+        $entry = $this->fuel->createManual($request->user()->company_id, $request->validated());
+
+        return (new FuelEntryResource($entry))
+            ->response()
+            ->setStatusCode(201);
+    }
+    public function mine(Request $request)
+    {
+        $entries = $request->user()->driver
+            ->fuelEntries()
+            ->with('vehicle')
+            ->latest('entry_time')
+            ->paginate((int) $request->input('per_page', 20));
+
+        return FuelEntryResource::collection($entries);
+    }
 }

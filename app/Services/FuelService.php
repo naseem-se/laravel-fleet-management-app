@@ -29,4 +29,19 @@ class FuelService
             ]);
         });
     }
+    public function createManual(int $companyId, array $data): FuelEntry
+    {
+        return DB::transaction(function () use ($data) {
+            return FuelEntry::create([
+                'vehicle_id' => $data['vehicle_id'],
+                'journey_id' => $data['journey_id'] ?? null,
+                'driver_id' => $data['driver_id'],
+                'quantity_litres' => $data['quantity_litres'],
+                'rate_per_litre' => $data['rate_per_litre'],
+                'total_cost' => round($data['quantity_litres'] * $data['rate_per_litre'], 2),
+                'odometer_reading' => $data['odometer_reading'],
+                'entry_time' => $data['entry_time'] ?? now(),
+            ]);
+        });
+    }
 }

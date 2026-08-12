@@ -44,6 +44,7 @@ class DriverService
                     'company_id' => $company->id,
                     'name' => $data['name'],
                     'email' => $data['email'],
+                    'phone' => $data['phone'],
                     'password' => Hash::make($data['password']),
                     'status' => 'active',
                 ]);
@@ -67,9 +68,18 @@ class DriverService
 
     public function update(Driver $driver, array $data): Driver
     {
-        $driver->update($data);
+        return DB::transaction(function () use ($driver, $data) {
+            $driver->update($data);
 
-        return $driver->fresh('assignedVehicle');
+            // Keep the linked login's phone in sync so it never drifts
+            // from the driver record — this is also what fixes phone
+            // showing blank in the driver's own profile.
+            if (array_key_exists('phone', $data) && $driver->user_id) {
+                User::where('id', $driver->user_id)->update(['phone' => $data['phone']]);
+            }
+
+            return $driver->fresh('assignedVehicle');
+        });
     }
 
     public function delete(Driver $driver): void
@@ -80,7 +90,55 @@ class DriverService
             ]);
         }
 
-        $driver->delete(); // soft delete — journey/fuel history stays intact
+        $driver->delete();
+    }
+
+    public function createLogin(Driver $driver, array $data): Driver
+    {
+        if ($driver->user_id) {
+            throw ValidationException::withMessages([
+                'driver' => ['This driver already has a login.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($driver, $data) {
+            $user = User::create([
+                'company_id' => $driver->company_id,
+                'name' => $driver->name,
+                'email' => $data['email'],
+                'phone' => $driver->phone, // was missing — this is why the profile phone field was always blank
+                'password' => Hash::make($data['password']),
+                'status' => 'active',
+            ]);
+            $user->assignRole('driver');
+
+            $driver->update(['user_id' => $user->id]);
+
+            return $driver->fresh('assignedVehicle');
+        });
+    }
+
+    public function updateLogin(Driver $driver, array $data): Driver
+    {
+        if (! $driver->user_id) {
+            throw ValidationException::withMessages([
+                'driver' => ['This driver does not have a login yet.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($driver, $data) {
+            $user = User::findOrFail($driver->user_id);
+
+            if (! empty($data['email'])) {
+                $user->email = $data['email'];
+            }
+            if (! empty($data['password'])) {
+                $user->password = Hash::make($data['password']);
+            }
+            $user->save();
+
+            return $driver->fresh('assignedVehicle');
+        });
     }
 
     protected function assertWithinPlanLimit(Company $company): void
@@ -93,9 +151,7 @@ class DriverService
             ]);
         }
 
-        // Counts users, not drivers — a driver with a login IS a user; a
-        // driver without one shouldn't count against the seat limit at all.
-        $currentUserCount = User::query()->count(); // already company-scoped
+        $currentUserCount = User::query()->count();
 
         if ($currentUserCount >= $subscription->plan->max_users) {
             throw ValidationException::withMessages([

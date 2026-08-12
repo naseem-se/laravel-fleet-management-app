@@ -27,17 +27,25 @@ class VehicleDocumentService
                 'file_path' => $filePath,
             ]);
 
-            if ($document->expiry_date) {
-                Reminder::create([
-                    'reminder_type' => 'document',
-                    'reference_type' => VehicleDocument::class,
-                    'reference_id' => $document->id,
-                    'due_date' => $document->expiry_date,
-                    'status' => 'pending',
-                ]);
-            }
+            $this->syncReminder($document);
 
             return $document;
+        });
+    }
+
+    public function update(VehicleDocument $document, array $data): VehicleDocument
+    {
+        return DB::transaction(function () use ($document, $data) {
+            if (isset($data['file'])) {
+                $data['file_path'] = $this->storePhoto($data['file'], $document->company_id, 'vehicle-documents');
+            }
+            unset($data['file']);
+
+            $document->update($data);
+
+            $this->syncReminder($document);
+
+            return $document->fresh();
         });
     }
 
@@ -51,5 +59,24 @@ class VehicleDocumentService
 
             $document->delete();
         });
+    }
+
+    protected function syncReminder(VehicleDocument $document): void
+    {
+        Reminder::where('reminder_type', 'document')
+            ->where('reference_type', VehicleDocument::class)
+            ->where('reference_id', $document->id)
+            ->where('status', 'pending')
+            ->delete();
+
+        if ($document->expiry_date) {
+            Reminder::create([
+                'reminder_type' => 'document',
+                'reference_type' => VehicleDocument::class,
+                'reference_id' => $document->id,
+                'due_date' => $document->expiry_date,
+                'status' => 'pending',
+            ]);
+        }
     }
 }

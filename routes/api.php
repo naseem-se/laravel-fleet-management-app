@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\DriverController;
 use App\Http\Controllers\Api\V1\FuelEntryController;
 use App\Http\Controllers\Api\V1\JourneyController;
 use App\Http\Controllers\Api\V1\MaintenanceRecordController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use App\Http\Controllers\Api\V1\VehicleDocumentController;
 use App\Http\Controllers\Api\V1\VehicleQrController;
@@ -22,6 +23,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
 
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/{id}/read', [NotificationController::class, 'markRead']);
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
+
         Route::middleware('subscription.active')->group(function () {
 
             Route::middleware('role:company_admin|dispatcher')->group(function () {
@@ -32,7 +37,6 @@ Route::prefix('v1')->group(function () {
                 Route::get('documents/expiring', [VehicleDocumentController::class, 'expiring']);
 
                 Route::apiResource('drivers', DriverController::class);
-                Route::get('drivers/{driver}/performance', [DriverController::class, 'performance']);
 
                 Route::get('journeys/live', [JourneyController::class, 'live']);
                 Route::get('fuel-entries', [FuelEntryController::class, 'index']);
@@ -45,6 +49,12 @@ Route::prefix('v1')->group(function () {
                 Route::get('reports/fuel', [ReportController::class, 'fuel']);
                 Route::get('reports/maintenance', [ReportController::class, 'maintenance']);
                 Route::get('reports/fleet-summary', [ReportController::class, 'fleetSummary']);
+
+                Route::post('drivers/{driver}/login', [DriverController::class, 'createLogin']);
+                Route::put('drivers/{driver}/login', [DriverController::class, 'updateLogin']);
+                Route::post('fuel-entries/manual', [FuelEntryController::class, 'storeAdmin']);
+                Route::get('reports/overview', [ReportController::class, 'overview']);
+                Route::put('vehicle-documents/{vehicleDocument}', [VehicleDocumentController::class, 'update']);
             });
 
             Route::middleware('role:driver')->group(function () {
@@ -56,10 +66,12 @@ Route::prefix('v1')->group(function () {
                 Route::get('journeys/current', [JourneyController::class, 'current']);
 
                 Route::post('fuel-entries', [FuelEntryController::class, 'store']);
+                Route::get('fuel-entries/mine', [FuelEntryController::class, 'mine']);
             });
 
             Route::middleware('role:company_admin|dispatcher|driver')->group(function () {
                 Route::get('journeys/{journey}', [JourneyController::class, 'show']);
+                Route::get('drivers/{driver}/performance', [DriverController::class, 'performance']);
             });
         });
 

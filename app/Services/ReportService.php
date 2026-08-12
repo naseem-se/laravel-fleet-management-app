@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Driver;
 use App\Models\FuelEntry;
+use App\Models\Journey;
 use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
 use Carbon\Carbon;
@@ -155,5 +156,32 @@ class ReportService
     protected function dayBounds(string $from, string $to): array
     {
         return ["{$from} 00:00:00", "{$to} 23:59:59"];
+    }
+    public function dashboardOverview(): array
+    {
+        $totalDistance = Journey::where('status', 'completed')->sum('total_distance');
+        $totalFuelLitres = FuelEntry::sum('quantity_litres');
+        $totalFuelCost = FuelEntry::sum('total_cost');
+        $totalMaintenanceCost = MaintenanceRecord::sum('cost');
+
+        return [
+            'vehicles' => [
+                'total' => Vehicle::count(),
+                'active' => Vehicle::where('status', 'active')->count(),
+                'inactive' => Vehicle::where('status', 'inactive')->count(),
+                'maintenance' => Vehicle::where('status', 'maintenance')->count(),
+            ],
+            'drivers' => [
+                'total' => Driver::count(),
+                'active' => Driver::where('status', 'active')->count(),
+            ],
+            'total_journeys' => \App\Models\Journey::where('status', 'completed')->count(),
+            'active_journeys' => \App\Models\Journey::where('status', 'active')->count(),
+            'total_distance' => (float) $totalDistance,
+            'total_fuel_litres' => (float) $totalFuelLitres,
+            'total_fuel_cost' => (float) $totalFuelCost,
+            'fleet_avg_kmpl' => $totalFuelLitres > 0 ? round($totalDistance / $totalFuelLitres, 2) : null,
+            'total_maintenance_cost' => (float) $totalMaintenanceCost,
+        ];
     }
 }
