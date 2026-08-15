@@ -16,8 +16,11 @@ use App\Http\Controllers\Api\V1\VehicleController;
 use App\Http\Controllers\Api\V1\VehicleDocumentController;
 use App\Http\Controllers\Api\V1\VehicleQrController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
+use App\Http\Controllers\Api\V1\DriverDocumentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Http\Request;
 
 Route::prefix('v1')->group(function () {
 
@@ -25,8 +28,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:login');
     Route::post('/auth/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:login');
 
-    Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
-        return \Illuminate\Support\Facades\Broadcast::auth($request);
+    Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
+        return Broadcast::auth($request);
     });
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
@@ -60,12 +63,21 @@ Route::prefix('v1')->group(function () {
                 Route::get('journeys/live', [JourneyController::class, 'live']);
                 Route::get('fuel-entries', [FuelEntryController::class, 'index']);
                 Route::post('fuel-entries/manual', [FuelEntryController::class, 'storeAdmin'])->middleware('throttle:uploads');
+                Route::put('fuel-entries/{fuelEntry}', [FuelEntryController::class, 'update']);
+                Route::delete('fuel-entries/{fuelEntry}', [FuelEntryController::class, 'destroy']);
 
                 Route::apiResource('maintenance-records', MaintenanceRecordController::class);
                 Route::get('maintenance/upcoming', [MaintenanceRecordController::class, 'upcoming']);
 
                 Route::get('company/settings', [CompanySettingsController::class, 'show']);
                 Route::put('company/settings', [CompanySettingsController::class, 'update']);
+
+                Route::post('drivers/{driver}/documents', [DriverDocumentController::class, 'store']);
+                Route::put('driver-documents/{driverDocument}', [DriverDocumentController::class, 'update']);
+                Route::delete('driver-documents/{driverDocument}', [DriverDocumentController::class, 'destroy']);
+                Route::get('driver-documents/expiring', [DriverDocumentController::class, 'expiring']);
+
+                Route::delete('journeys/{journey}', [JourneyController::class, 'destroy']);
 
                 Route::middleware('throttle:reports')->group(function () {
                     Route::get('reports/overview', [ReportController::class, 'overview']);

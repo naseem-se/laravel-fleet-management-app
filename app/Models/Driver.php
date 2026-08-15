@@ -45,6 +45,10 @@ class Driver extends Model
     {
         return $this->hasMany(FuelEntry::class);
     }
+    public function documents(): HasMany
+    {
+        return $this->hasMany(DriverDocument::class);
+    }
 
     public function isLicenseExpiringSoon(int $withinDays = 30): bool
     {

@@ -41,7 +41,7 @@ class DriverController extends Controller
     {
         $this->authorize('view', $driver);
 
-        return new DriverResource($driver->load('assignedVehicle'));
+        return new DriverResource($driver->load(['assignedVehicle', 'documents']));
     }
 
     public function update(UpdateDriverRequest $request, Driver $driver)

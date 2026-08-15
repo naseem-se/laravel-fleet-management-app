@@ -13,7 +13,7 @@ class JourneyStatusChanged implements ShouldBroadcastNow
     public function __construct(
         public int $journeyId,
         public int $companyId,
-        public string $status,
+        public string $status, // 'started' | 'ended'
     ) {
     }
 

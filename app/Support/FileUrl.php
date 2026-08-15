@@ -7,12 +7,6 @@ use Illuminate\Support\Facades\Storage;
 
 class FileUrl
 {
-    /**
-     * Wraps Storage::disk()->url() behind a concrete FilesystemAdapter type
-     * hint (rather than the Filesystem contract, which doesn't declare url())
-     * so this is the one place that needs the disk-driver knowledge —
-     * Resources just call FileUrl::for($path).
-     */
     public static function for(?string $path): ?string
     {
         if (! $path) {
@@ -21,7 +15,16 @@ class FileUrl
 
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk(config('filesystems.default'));
+        $url = $disk->url($path);
 
-        return $disk->url($path);
+        // Some disk configs return a relative URL (starts with '/'). The
+        // frontend lives on a different origin/port than the API, so a
+        // relative path resolves against the FRONTEND's own origin and
+        // 404s. Force it absolute against the backend's real URL.
+        if (str_starts_with($url, '/')) {
+            $url = rtrim(config('app.url'), '/').$url;
+        }
+
+        return $url;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\DriverDocumentResource;
 
 class DriverResource extends JsonResource
 {
@@ -27,6 +28,7 @@ class DriverResource extends JsonResource
                     ]
                     : null
             ),
+            'documents' => DriverDocumentResource::collection($this->whenLoaded('documents')),
             'created_at' => $this->created_at,
         ];
     }

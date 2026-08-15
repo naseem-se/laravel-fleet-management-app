@@ -19,8 +19,6 @@ class JourneyService
     public function start(Driver $driver, array $data): Journey
     {
         return DB::transaction(function () use ($driver, $data) {
-            // Lock the vehicle row for the duration of this check+create so two
-            // simultaneous start requests for the same vehicle can't both succeed.
             $vehicle = Vehicle::where('id', $data['vehicle_id'])->lockForUpdate()->firstOrFail();
 
             if ($vehicle->activeJourney()->exists()) {
@@ -116,14 +114,27 @@ class JourneyService
                 'duration_minutes' => $journey->start_time->diffInMinutes($endTime),
             ]);
 
-            // The odometer's final authoritative value comes from the journey end,
-            // not incremented — always the actual reading the driver photographed.
             $journey->vehicle()->update(['current_odometer' => $data['end_km']]);
 
             broadcast(new JourneyStatusChanged($journey->id, $journey->company_id, 'ended'))->toOthers();
 
             return $journey->fresh();
-;
+        });
+    }
+
+    public function delete(Journey $journey): void
+    {
+        DB::transaction(function () use ($journey) {
+            $this->deletePhoto($journey->start_photo_path);
+            $this->deletePhoto($journey->end_photo_path);
+
+            foreach ($journey->fuelEntries as $fuelEntry) {
+                $this->deletePhoto($fuelEntry->receipt_photo_path);
+            }
+            $journey->fuelEntries()->delete();
+            $journey->locations()->delete();
+
+            $journey->delete();
         });
     }
 }

@@ -72,5 +72,14 @@ class JourneyController extends Controller
 
         return new JourneyResource($journey->load(['vehicle', 'driver', 'fuelEntries', 'locations', 'locationSummary']));
     }
+
+    public function destroy(Journey $journey)
+    {
+        $this->authorize('delete', $journey);
+
+        $this->journeys->delete($journey);
+
+        return response()->json(['message' => 'Journey deleted.']);
+    }
     
 }

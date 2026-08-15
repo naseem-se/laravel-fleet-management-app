@@ -63,4 +63,18 @@ class FuelEntryController extends Controller
 
         return FuelEntryResource::collection($entries);
     }
+
+    public function update(\App\Http\Requests\Fuel\UpdateFuelEntryRequest $request, \App\Models\FuelEntry $fuelEntry)
+    {
+        $entry = $this->fuel->update($fuelEntry, $request->validated());
+
+        return new FuelEntryResource($entry);
+    }
+
+    public function destroy(\App\Models\FuelEntry $fuelEntry)
+    {
+        $this->fuel->delete($fuelEntry);
+
+        return response()->json(['message' => 'Fuel entry deleted.']);
+    }
 }

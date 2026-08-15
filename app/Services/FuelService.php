@@ -29,9 +29,10 @@ class FuelService
             ]);
         });
     }
+
     public function createManual(int $companyId, array $data): FuelEntry
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($companyId, $data) {
             return FuelEntry::create([
                 'vehicle_id' => $data['vehicle_id'],
                 'journey_id' => $data['journey_id'] ?? null,
@@ -42,6 +43,40 @@ class FuelService
                 'odometer_reading' => $data['odometer_reading'],
                 'entry_time' => $data['entry_time'] ?? now(),
             ]);
+        });
+    }
+
+    public function update(FuelEntry $entry, array $data): FuelEntry
+    {
+        return DB::transaction(function () use ($entry, $data) {
+            if (isset($data['quantity_litres']) || isset($data['rate_per_litre'])) {
+                $litres = $data['quantity_litres'] ?? $entry->quantity_litres;
+                $rate = $data['rate_per_litre'] ?? $entry->rate_per_litre;
+                $data['total_cost'] = round($litres * $rate, 2);
+            }
+
+            if (isset($data['receipt_photo'])) {
+                $data['receipt_photo_path'] = $this->replacePhoto(
+                    $data['receipt_photo'],
+                    $entry->receipt_photo_path,
+                    $entry->company_id,
+                    'fuel-receipts'
+                );
+            }
+            unset($data['receipt_photo']);
+
+            $entry->update($data);
+
+            return $entry->fresh();
+        });
+    }
+
+    public function delete(FuelEntry $entry): void
+    {
+        DB::transaction(function () use ($entry) {
+            $this->deletePhoto($entry->receipt_photo_path);
+
+            $entry->delete();
         });
     }
 }

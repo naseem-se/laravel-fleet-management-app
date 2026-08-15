@@ -62,29 +62,36 @@ class VehicleController extends Controller
         return response()->json(['message' => 'Vehicle deleted.']);
     }
 
-    /**
-     * Full history for the vehicle detail page: journeys, fuel, maintenance,
-     * combined and ordered newest-first. Kept here rather than in the
-     * service since it's purely a read/presentation concern.
-     */
     public function history(Vehicle $vehicle)
     {
         $this->authorize('view', $vehicle);
 
         $vehicle->load([
-            'assignedDriver', // was missing — this is why the detail page showed no assigned driver
+            'assignedDriver',
             'journeys' => fn ($q) => $q->latest('start_time')->limit(50),
             'fuelEntries' => fn ($q) => $q->latest('entry_time')->limit(50),
             'maintenanceRecords' => fn ($q) => $q->latest('service_date')->limit(50),
             'documents',
         ]);
 
+        $totalDistance = $vehicle->journeys()
+            ->where('status', 'completed')
+            ->where('start_time', '>=', now()->subDays(90))
+            ->sum('total_distance');
+
+        $totalFuel = $vehicle->fuelEntries()
+            ->where('entry_time', '>=', now()->subDays(90))
+            ->sum('quantity_litres');
+
+        $liveAvgKmpl = $totalFuel > 0 ? round($totalDistance / $totalFuel, 2) : null;
+
         return response()->json([
             'vehicle' => new VehicleResource($vehicle),
-            'journeys' => $vehicle->journeys,
-            'fuel_entries' => $vehicle->fuelEntries,
-            'maintenance_records' => $vehicle->maintenanceRecords,
-            'documents' => $vehicle->documents,
+            'journeys' => \App\Http\Resources\JourneyResource::collection($vehicle->journeys),
+            'fuel_entries' => \App\Http\Resources\FuelEntryResource::collection($vehicle->fuelEntries),
+            'maintenance_records' => \App\Http\Resources\MaintenanceRecordResource::collection($vehicle->maintenanceRecords),
+            'documents' => \App\Http\Resources\VehicleDocumentResource::collection($vehicle->documents),
+            'live_avg_kmpl' => $liveAvgKmpl,
         ]);
     }
 }

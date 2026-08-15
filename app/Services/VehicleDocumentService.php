@@ -37,7 +37,14 @@ class VehicleDocumentService
     {
         return DB::transaction(function () use ($document, $data) {
             if (isset($data['file'])) {
-                $data['file_path'] = $this->storePhoto($data['file'], $document->company_id, 'vehicle-documents');
+                // Replace: store the new file, then delete the old one —
+                // never leaves the record briefly pointing at nothing.
+                $data['file_path'] = $this->replacePhoto(
+                    $data['file'],
+                    $document->file_path,
+                    $document->company_id,
+                    'vehicle-documents'
+                );
             }
             unset($data['file']);
 
@@ -52,6 +59,8 @@ class VehicleDocumentService
     public function delete(VehicleDocument $document): void
     {
         DB::transaction(function () use ($document) {
+            $this->deletePhoto($document->file_path);
+
             Reminder::where('reminder_type', 'document')
                 ->where('reference_type', VehicleDocument::class)
                 ->where('reference_id', $document->id)
