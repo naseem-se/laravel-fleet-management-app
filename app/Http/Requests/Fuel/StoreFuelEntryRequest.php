@@ -26,7 +26,7 @@ class StoreFuelEntryRequest extends FormRequest
             'quantity_litres' => ['required', 'numeric', 'min:0.1'],
             'rate_per_litre' => ['required', 'numeric', 'min:0.01'],
             'odometer_reading' => ['required', 'numeric', 'min:0'],
-            'receipt_photo' => ['required', 'image', 'max:5120'],
+            'receipt_photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent],
         ];
     }
 }

@@ -70,6 +70,7 @@ class JourneyController extends Controller
     {
         $this->authorize('view', $journey);
 
-        return new JourneyResource($journey->load(['vehicle', 'driver', 'fuelEntries']));
+        return new JourneyResource($journey->load(['vehicle', 'driver', 'fuelEntries', 'locations', 'locationSummary']));
     }
+    
 }

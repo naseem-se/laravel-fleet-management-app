@@ -50,7 +50,9 @@ class CompanyService
                 'password' => Hash::make($data['admin_password']),
                 'status' => 'active',
             ]);
+            
             $admin->assignRole('company_admin');
+            $admin->sendEmailVerificationNotification();
 
             if (! empty($data['subscription_plan_id'])) {
                 $trialDays = $data['trial_days'] ?? 0;

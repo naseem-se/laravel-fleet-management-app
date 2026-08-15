@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Company extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'name', 'legal_name', 'slug', 'logo_path', 'status', 'timezone', 'settings',
@@ -52,5 +54,13 @@ class Company extends Model
         $subscription = $this->activeSubscription;
 
         return $subscription && $subscription->ends_at->isFuture();
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'status', 'timezone'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

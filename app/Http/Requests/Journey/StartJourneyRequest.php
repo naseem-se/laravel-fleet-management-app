@@ -20,7 +20,7 @@ class StartJourneyRequest extends FormRequest
                 Rule::exists('vehicles', 'id')->where('company_id', $this->user()->company_id),
             ],
             'start_km' => ['required', 'numeric', 'min:0'],
-            'photo' => ['required', 'image', 'max:5120'], // 5MB — client should compress before upload, see PWA notes
+            'photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent], // 5MB — client should compress before upload, see PWA notes
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
         ];

@@ -63,4 +63,15 @@ class CompanyController extends Controller
     {
         return response()->json($this->companies->platformStats());
     }
+
+    public function activity(Company $company)
+    {
+        $activities = \Spatie\Activitylog\Models\Activity::where('subject_type', Company::class)
+            ->where('subject_id', $company->id)
+            ->latest()
+            ->limit(50)
+            ->get();
+
+        return response()->json(['data' => $activities]);
+    }
 }

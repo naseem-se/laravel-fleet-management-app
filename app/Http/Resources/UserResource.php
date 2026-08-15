@@ -16,6 +16,7 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'status' => $this->status,
             'roles' => $this->getRoleNames(), // from spatie/laravel-permission
+            'email_verified' => ! is_null($this->email_verified_at),
             'company_id' => $this->company_id,
             'driver' => $this->whenLoaded('driver', fn () => ['id' => $this->driver->id, 'phone' => $this->driver->phone]),
             'company' => $this->whenLoaded('company', fn () => [

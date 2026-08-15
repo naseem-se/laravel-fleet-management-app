@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -38,11 +39,17 @@ class AuthController extends Controller
             }
         }
 
+        if ($user->hasRole('super_admin') && $user->two_factor_enabled) {
+            $partialToken = $user->createToken('2fa-pending', ['2fa-pending'])->plainTextToken;
+
+            return response()->json([
+                'requires_2fa' => true,
+                'partial_token' => $partialToken,
+            ]);
+        }
+
         $user->forceFill(['last_login_at' => now()])->save();
 
-        // Token abilities mirror the role — lets a future API consumer (or the
-        // frontend) reason about capability without a second roles round-trip,
-        // and lets us scope a specific token narrowly if we add API keys later.
         $abilities = $user->getRoleNames()->toArray() ?: ['*'];
 
         $token = $user->createToken(
@@ -66,5 +73,16 @@ class AuthController extends Controller
     public function me()
     {
         return new UserResource(request()->user()->load(['company', 'driver']));
+    }
+
+    public function resendVerification(Request $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified.']);
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return response()->json(['message' => 'Verification email sent.']);
     }
 }

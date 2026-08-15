@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Middleware\EnsureSubscriptionActive;
+use App\Http\Middleware\SecurityHeaders;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
+
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
+        // $middleware->prepend(RateLimiter::class);
+
+        $middleware->append(SecurityHeaders::class);
 
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,

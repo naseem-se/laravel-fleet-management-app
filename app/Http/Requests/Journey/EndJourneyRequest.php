@@ -15,7 +15,7 @@ class EndJourneyRequest extends FormRequest
     {
         return [
             'end_km' => ['required', 'numeric', 'min:0'],
-            'photo' => ['required', 'image', 'max:5120'],
+            'photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent],
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
         ];

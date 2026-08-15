@@ -49,6 +49,7 @@ class DriverService
                     'status' => 'active',
                 ]);
                 $user->assignRole('driver');
+                $user->sendEmailVerificationNotification();
                 $userId = $user->id;
             }
 
@@ -63,6 +64,7 @@ class DriverService
             ]);
 
             return $driver->fresh('assignedVehicle');
+            
         });
     }
 
@@ -71,9 +73,6 @@ class DriverService
         return DB::transaction(function () use ($driver, $data) {
             $driver->update($data);
 
-            // Keep the linked login's phone in sync so it never drifts
-            // from the driver record — this is also what fixes phone
-            // showing blank in the driver's own profile.
             if (array_key_exists('phone', $data) && $driver->user_id) {
                 User::where('id', $driver->user_id)->update(['phone' => $data['phone']]);
             }
@@ -111,6 +110,7 @@ class DriverService
                 'status' => 'active',
             ]);
             $user->assignRole('driver');
+            $user->sendEmailVerificationNotification();
 
             $driver->update(['user_id' => $user->id]);
 

@@ -12,3 +12,5 @@ Schedule::command('fleet:check-maintenance-due')->dailyAt('07:00');
 Schedule::command('fleet:check-document-expiry')->dailyAt('07:00');
 Schedule::command('fleet:check-license-expiry')->dailyAt('07:00');
 Schedule::command('fleet:recalculate-avg-kmpl')->dailyAt('01:00');
+Schedule::command('fleet:prune-expired-tokens')->daily();
+Schedule::command('fleet:archive-journey-locations')->dailyAt('02:00');

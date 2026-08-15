@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\JourneyLocationUpdated;
+use App\Events\JourneyStatusChanged;
 use App\Models\Driver;
 use App\Models\Journey;
 use App\Models\JourneyLocation;
@@ -35,7 +37,7 @@ class JourneyService
 
             $photoPath = $this->storePhoto($data['photo'], $driver->company_id, 'journeys/start');
 
-            return Journey::create([
+            $journey = Journey::create([
                 'vehicle_id' => $vehicle->id,
                 'driver_id' => $driver->id,
                 'status' => 'active',
@@ -45,6 +47,10 @@ class JourneyService
                 'start_lng' => $data['lng'],
                 'start_time' => now(),
             ]);
+
+            broadcast(new JourneyStatusChanged($journey->id, $driver->company_id, 'started'))->toOthers();
+
+            return $journey;
         });
     }
 
@@ -56,22 +62,29 @@ class JourneyService
             ]);
         }
 
-        return DB::transaction(function () use ($journey, $data) {
-            $location = $journey->locations()->create([
-                'lat' => $data['lat'],
-                'lng' => $data['lng'],
-                'speed_kmh' => $data['speed_kmh'] ?? null,
-                'recorded_at' => $data['recorded_at'] ?? now(),
-            ]);
+        $location = $journey->locations()->create([
+            'lat' => $data['lat'],
+            'lng' => $data['lng'],
+            'speed_kmh' => $data['speed_kmh'] ?? null,
+            'recorded_at' => $data['recorded_at'] ?? now(),
+        ]);
 
-            $journey->vehicle()->update([
-                'last_lat' => $data['lat'],
-                'last_lng' => $data['lng'],
-                'last_location_at' => $location->recorded_at,
-            ]);
+        $journey->vehicle()->update([
+            'last_lat' => $data['lat'],
+            'last_lng' => $data['lng'],
+            'last_location_at' => $location->recorded_at,
+        ]);
 
-            return $location;
-        });
+        broadcast(new JourneyLocationUpdated(
+            $journey->id,
+            $journey->company_id,
+            (float) $data['lat'],
+            (float) $data['lng'],
+            isset($data['speed_kmh']) ? (float) $data['speed_kmh'] : null,
+            $location->recorded_at->toIso8601String(),
+        ))->toOthers();
+
+        return $location;
     }
 
     public function end(Journey $journey, array $data): Journey
@@ -107,7 +120,10 @@ class JourneyService
             // not incremented — always the actual reading the driver photographed.
             $journey->vehicle()->update(['current_odometer' => $data['end_km']]);
 
+            broadcast(new JourneyStatusChanged($journey->id, $journey->company_id, 'ended'))->toOthers();
+
             return $journey->fresh();
+;
         });
     }
 }

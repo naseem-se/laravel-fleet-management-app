@@ -42,6 +42,18 @@ class JourneyResource extends JsonResource
                 'lng' => $this->vehicle->last_lng,
                 'recorded_at' => $this->vehicle->last_location_at,
             ] : null),
+            'location_summary' => $this->whenLoaded('locationSummary', fn () => $this->locationSummary ? [
+                'point_count' => $this->locationSummary->point_count,
+                'bounds' => [
+                    'min_lat' => $this->locationSummary->min_lat,
+                    'max_lat' => $this->locationSummary->max_lat,
+                    'min_lng' => $this->locationSummary->min_lng,
+                    'max_lng' => $this->locationSummary->max_lng,
+                ],
+                'max_speed_kmh' => $this->locationSummary->max_speed_kmh,
+                'avg_speed_kmh' => $this->locationSummary->avg_speed_kmh,
+                'archived_at' => $this->locationSummary->archived_at,
+            ] : null),
         ];
     }
 }

@@ -123,4 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'admin_frontend_url' => env('ADMIN_FRONTEND_URL', 'http://localhost:5173'),
+    'super_admin_frontend_url' => env('SUPER_ADMIN_FRONTEND_URL', 'http://localhost:5173'),
+    'driver_frontend_url' => env('DRIVER_FRONTEND_URL', 'http://localhost:5174'),
 ];

@@ -4,25 +4,28 @@ namespace App\Notifications;
 
 use App\Models\Reminder;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ReminderNotification extends Notification
+class ReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(protected Reminder $reminder, protected string $summary)
     {
+        $this->onQueue('notifications');
     }
 
-    /**
-     * database → bell icon in the dashboard; mail → email. FCM push can be
-     * added here later (e.g. 'fcm') once a push channel package is wired up
-     * — nothing else about this class needs to change.
-     */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database', 'mail'];
+
+        if ($notifiable->deviceTokens()->exists()) {
+            $channels[] = 'fcm';
+        }
+
+        return $channels;
     }
 
     public function toDatabase(object $notifiable): array
@@ -41,5 +44,10 @@ class ReminderNotification extends Notification
             ->subject('Fleet Alert: '.$this->summary)
             ->line($this->summary)
             ->line('Due date: '.($this->reminder->due_date?->toFormattedDateString() ?? 'N/A'));
+    }
+
+    public function toFcm(object $notifiable): array
+    {
+        return $notifiable->deviceTokens->pluck('token')->all();
     }
 }

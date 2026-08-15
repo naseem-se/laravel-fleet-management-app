@@ -55,4 +55,9 @@ class Journey extends Model
     {
         return $this->status === 'active';
     }
+
+    public function locationSummary()
+    {
+        return $this->hasOne(JourneyLocationSummary::class);
+    }
 }

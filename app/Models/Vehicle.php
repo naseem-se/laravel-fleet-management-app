@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Vehicle extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany;
+    use HasFactory, SoftDeletes, BelongsToCompany, LogsActivity;
 
     protected $fillable = [
         'company_id', 'assigned_driver_id', 'registration_number', 'qr_code_value',
@@ -68,5 +70,12 @@ class Vehicle extends Model
     public function activeJourney(): HasMany
     {
         return $this->hasMany(Journey::class)->where('status', 'active');
+    }
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status', 'assigned_driver_id'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }
