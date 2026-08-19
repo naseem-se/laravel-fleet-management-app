@@ -76,6 +76,8 @@ Route::prefix('v1')->group(function () {
                 Route::put('driver-documents/{driverDocument}', [DriverDocumentController::class, 'update']);
                 Route::delete('driver-documents/{driverDocument}', [DriverDocumentController::class, 'destroy']);
                 Route::get('driver-documents/expiring', [DriverDocumentController::class, 'expiring']);
+                Route::post('drivers/{driver}/photo', [DriverController::class, 'updatePhoto']);
+                Route::delete('drivers/{driver}/photo', [DriverController::class, 'removePhoto']);
 
                 Route::delete('journeys/{journey}', [JourneyController::class, 'destroy']);
 
@@ -104,6 +106,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('role:company_admin|dispatcher|driver')->group(function () {
                 Route::get('journeys/{journey}', [JourneyController::class, 'show']);
                 Route::get('drivers/{driver}/performance', [DriverController::class, 'performance']);
+                Route::post('drivers/{driver}/photo', [DriverController::class, 'updatePhoto']);
             });
         });
 

@@ -16,6 +16,7 @@ class Driver extends Model
     protected $fillable = [
         'company_id', 'user_id', 'name', 'phone', 'cnic_number',
         'license_number', 'license_expiry_date', 'status', 'pin_hash',
+        'profile_photo_path',
     ];
 
     protected $hidden = [

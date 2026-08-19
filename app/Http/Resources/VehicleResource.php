@@ -25,9 +25,10 @@ class VehicleResource extends JsonResource
             'avg_kmpl_cached' => $this->avg_kmpl_cached,
             'status' => $this->status,
             'last_location' => $this->when($this->last_location_at, [
-                'lat' => $this->last_lat,
-                'lng' => $this->last_lng,
+                'lat' => (float) $this->last_lat,
+                'lng' => (float) $this->last_lng,
                 'recorded_at' => $this->last_location_at,
+                'accuracy_meters' => $this->last_accuracy_meters !== null ? (float) $this->last_accuracy_meters : null,
             ]),
             'assigned_driver' => $this->whenLoaded('assignedDriver', fn () => [
                 'id' => $this->assignedDriver->id,

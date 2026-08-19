@@ -8,11 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class SubscriptionService
 {
-    /**
-     * Assigns a new subscription (upgrade, renewal, or plan change) and
-     * marks any previously-active one as cancelled — a company has at
-     * most one truly "active" subscription at a time.
-     */
+
     public function assign(Company $company, array $data): Subscription
     {
         return DB::transaction(function () use ($company, $data) {

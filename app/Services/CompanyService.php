@@ -56,13 +56,18 @@ class CompanyService
 
             if (! empty($data['subscription_plan_id'])) {
                 $trialDays = $data['trial_days'] ?? 0;
+                $plan = \App\Models\SubscriptionPlan::findOrFail($data['subscription_plan_id']);
+
+                $endsAt = $plan->billing_cycle === 'yearly'
+                    ? now()->addYear()
+                    : now()->addMonth();
 
                 Subscription::create([
                     'company_id' => $company->id,
-                    'subscription_plan_id' => $data['subscription_plan_id'],
+                    'subscription_plan_id' => $plan->id,
                     'status' => 'active',
                     'starts_at' => now(),
-                    'ends_at' => now()->addYear(), // billing cycle renewal handled in Step 8's ExpireSubscriptions job (already scheduled) or a future billing integration
+                    'ends_at' => $endsAt,
                     'trial_ends_at' => $trialDays > 0 ? now()->addDays($trialDays) : null,
                 ]);
             }

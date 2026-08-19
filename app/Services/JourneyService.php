@@ -64,6 +64,7 @@ class JourneyService
             'lat' => $data['lat'],
             'lng' => $data['lng'],
             'speed_kmh' => $data['speed_kmh'] ?? null,
+            'accuracy_meters' => $data['accuracy'] ?? null,
             'recorded_at' => $data['recorded_at'] ?? now(),
         ]);
 
@@ -71,6 +72,7 @@ class JourneyService
             'last_lat' => $data['lat'],
             'last_lng' => $data['lng'],
             'last_location_at' => $location->recorded_at,
+            'last_accuracy_meters' => $data['accuracy'] ?? null,
         ]);
 
         broadcast(new JourneyLocationUpdated(
@@ -80,6 +82,7 @@ class JourneyService
             (float) $data['lng'],
             isset($data['speed_kmh']) ? (float) $data['speed_kmh'] : null,
             $location->recorded_at->toIso8601String(),
+            isset($data['accuracy']) ? (float) $data['accuracy'] : null,
         ))->toOthers();
 
         return $location;

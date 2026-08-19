@@ -18,6 +18,7 @@ class JourneyLocationUpdated implements ShouldBroadcastNow
         public float $lng,
         public ?float $speedKmh,
         public string $recordedAt,
+        public ?float $accuracyMeters = null,
     ) {
     }
 
@@ -39,6 +40,7 @@ class JourneyLocationUpdated implements ShouldBroadcastNow
             'lng' => $this->lng,
             'speed_kmh' => $this->speedKmh,
             'recorded_at' => $this->recordedAt,
+            'accuracy_meters' => $this->accuracyMeters,
         ];
     }
 }

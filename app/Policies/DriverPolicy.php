@@ -36,4 +36,13 @@ class DriverPolicy
     {
         return $user->hasRole('company_admin');
     }
+
+    public function updatePhoto(User $user, Driver $driver): bool
+    {
+        if ($user->hasAnyRole(['company_admin', 'dispatcher'])) {
+            return true;
+        }
+
+        return $user->driver && $user->driver->id === $driver->id;
+    }
 }

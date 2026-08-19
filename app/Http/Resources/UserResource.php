@@ -18,7 +18,11 @@ class UserResource extends JsonResource
             'roles' => $this->getRoleNames(), // from spatie/laravel-permission
             'email_verified' => ! is_null($this->email_verified_at),
             'company_id' => $this->company_id,
-            'driver' => $this->whenLoaded('driver', fn () => ['id' => $this->driver->id, 'phone' => $this->driver->phone]),
+            'driver' => $this->whenLoaded('driver', fn () => [
+                'id' => $this->driver->id,
+                'phone' => $this->driver->phone,
+                'profile_photo_url' => \App\Support\FileUrl::for($this->driver->profile_photo_path),
+            ]),
             'company' => $this->whenLoaded('company', fn () => [
                 'id' => $this->company->id,
                 'name' => $this->company->name,

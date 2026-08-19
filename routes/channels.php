@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('company.{companyId}.journeys', function ($user, $companyId) {
-    
+
     if ((int) $user->company_id !== (int) $companyId) {
         return false;
     }

@@ -8,11 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSubscriptionActive
 {
-    /**
-     * Blocks company-tenant users once their subscription has lapsed.
-     * Super admins (company_id === null) always pass through — they're
-     * the ones managing subscriptions, not bound by them.
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -20,13 +15,19 @@ class EnsureSubscriptionActive
         if ($user && $user->company_id !== null) {
             if ($user->company->status === 'suspended') {
                 return response()->json([
-                    'message' => 'Your company account has been suspended. Contact support.',
+                    'code' => 'account_suspended',
+                    'message' => 'Your company account has been suspended. Please contact your administrator or our support team for assistance.',
                 ], 403);
             }
 
-            if (! $user->company->isSubscriptionActive()) {
+            $subscription = $user->company->activeSubscription()->with('plan')->first();
+
+            if (! $subscription || $subscription->ends_at->isPast()) {
                 return response()->json([
-                    'message' => 'Your subscription has expired. Please renew to continue.',
+                    'code' => 'subscription_expired',
+                    'message' => 'Your subscription has expired.',
+                    'detail' => 'To continue using Fleet Management, please renew your plan. Contact your account administrator or our support team to restore access.',
+                    'expired_at' => $subscription?->ends_at?->toIso8601String(),
                 ], 402);
             }
         }

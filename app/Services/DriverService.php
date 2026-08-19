@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Company;
 use App\Models\Driver;
 use App\Models\User;
+use App\Services\Concerns\StoresPhotos;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class DriverService
 {
+    use StoresPhotos;
+
     public function paginate(array $filters, int $perPage = 20): LengthAwarePaginator
     {
         $query = Driver::query()->with('assignedVehicle');
@@ -22,7 +27,7 @@ class DriverService
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
+            $query->where(function (Builder $q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('license_number', 'like', "%{$search}%");
@@ -64,7 +69,6 @@ class DriverService
             ]);
 
             return $driver->fresh('assignedVehicle');
-            
         });
     }
 
@@ -89,7 +93,13 @@ class DriverService
             ]);
         }
 
-        $driver->delete();
+        DB::transaction(function () use ($driver) {
+            // A deleted driver's profile photo has nowhere left to be shown
+            // — clean it up from storage rather than leaving it orphaned.
+            $this->deletePhoto($driver->profile_photo_path);
+
+            $driver->delete();
+        });
     }
 
     public function createLogin(Driver $driver, array $data): Driver
@@ -105,7 +115,7 @@ class DriverService
                 'company_id' => $driver->company_id,
                 'name' => $driver->name,
                 'email' => $data['email'],
-                'phone' => $driver->phone, // was missing — this is why the profile phone field was always blank
+                'phone' => $driver->phone,
                 'password' => Hash::make($data['password']),
                 'status' => 'active',
             ]);
@@ -138,6 +148,33 @@ class DriverService
             $user->save();
 
             return $driver->fresh('assignedVehicle');
+        });
+    }
+
+    public function updatePhoto(Driver $driver, UploadedFile $photo): Driver
+    {
+        return DB::transaction(function () use ($driver, $photo) {
+            $newPath = $this->replacePhoto(
+                $photo,
+                $driver->profile_photo_path,
+                $driver->company_id,
+                'driver-photos'
+            );
+
+            $driver->update(['profile_photo_path' => $newPath]);
+
+            return $driver->fresh();
+        });
+    }
+
+    public function removePhoto(Driver $driver): Driver
+    {
+        return DB::transaction(function () use ($driver) {
+            $this->deletePhoto($driver->profile_photo_path);
+
+            $driver->update(['profile_photo_path' => null]);
+
+            return $driver->fresh();
         });
     }
 

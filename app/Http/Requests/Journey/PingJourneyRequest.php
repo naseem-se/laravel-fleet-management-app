@@ -17,7 +17,8 @@ class PingJourneyRequest extends FormRequest
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
             'speed_kmh' => ['nullable', 'numeric', 'min:0', 'max:300'],
-            'recorded_at' => ['nullable', 'date'], // falls back to now() — lets the PWA flush a queued offline ping with its real capture time
+            'accuracy' => ['nullable', 'numeric', 'min:0'],
+            'recorded_at' => ['nullable', 'date'],
         ];
     }
 }

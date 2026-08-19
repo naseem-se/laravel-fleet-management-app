@@ -60,11 +60,7 @@ class DriverController extends Controller
         return response()->json(['message' => 'Driver deleted.']);
     }
 
-    /**
-     * Simple performance snapshot — journey count, total distance, total
-     * fuel cost for a period. Report-module (Step 9) will build richer
-     * exports on top of the same underlying queries.
-     */
+
     public function performance(Driver $driver, Request $request)
     {
         $this->authorize('view', $driver);
@@ -100,4 +96,23 @@ class DriverController extends Controller
 
         return new DriverResource($driver);
     }
+
+    public function updatePhoto(\App\Http\Requests\Driver\UpdateDriverPhotoRequest $request, Driver $driver)
+    {
+        $this->authorize('updatePhoto', $driver);
+
+        $driver = $this->drivers->updatePhoto($driver, $request->file('photo'));
+
+        return new DriverResource($driver);
+    }
+
+    public function removePhoto(Driver $driver)
+    {
+        $this->authorize('updatePhoto', $driver);
+
+        $driver = $this->drivers->removePhoto($driver);
+
+        return new DriverResource($driver);
+    }
+
 }
