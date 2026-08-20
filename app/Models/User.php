@@ -18,6 +18,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'company_id', 'name', 'email', 'phone', 'password', 'status',
     ];
 
+    protected string $guard_name = 'sanctum';
+
     protected $hidden = [
         'password', 'remember_token',
     ];
