@@ -43,16 +43,10 @@ class ReportService
             'fuel_cost_per_km' => $totalDistance > 0 ? round($totalFuelCost / $totalDistance, 2) : null,
             'total_maintenance_cost' => (float) $totalMaintenanceCost,
             'journeys' => $journeys->get(['id', 'start_time', 'end_time', 'start_km', 'end_km', 'total_distance', 'start_photo_path', 'end_photo_path'])
-                ->map(fn ($j) => [
-                    'id' => $j->id,
-                    'start_time' => $j->start_time,
-                    'end_time' => $j->end_time,
-                    'start_km' => $j->start_km,
-                    'end_km' => $j->end_km,
-                    'total_distance' => $j->total_distance,
-                    'start' => ['photo_url' => \App\Support\FileUrl::for($j->start_photo_path)],
-                    'end' => ['photo_url' => \App\Support\FileUrl::for($j->end_photo_path)],
-                ]),
+                ->each(function ($j) {
+                    $j->start_photo_url = \App\Support\FileUrl::for($j->start_photo_path);
+                    $j->end_photo_url = \App\Support\FileUrl::for($j->end_photo_path);
+                }),
         ];
     }
 

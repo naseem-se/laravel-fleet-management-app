@@ -29,7 +29,7 @@
 
     <table>
         <thead>
-            <tr><th>Start</th><th>End</th><th>Start KM</th><th>End KM</th><th>Distance</th></tr>
+            <tr><th>Start</th><th>End</th><th>Start KM</th><th>End KM</th><th>Distance</th><th>Photos</th></tr>
         </thead>
         <tbody>
             @foreach ($data['journeys'] as $journey)
@@ -39,6 +39,14 @@
                     <td>{{ $journey->start_km }}</td>
                     <td>{{ $journey->end_km }}</td>
                     <td>{{ $journey->total_distance }}</td>
+                    <td>
+                        @if ($journey->start_photo_url)
+                            <a href="{{ $journey->start_photo_url }}">Start</a>
+                        @endif
+                        @if ($journey->end_photo_url)
+                            <a href="{{ $journey->end_photo_url }}">End</a>
+                        @endif
+                    </td>
                 </tr>
             @endforeach
         </tbody>
