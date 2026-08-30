@@ -67,23 +67,20 @@ class VehicleController extends Controller
         $this->authorize('view', $vehicle);
 
         $vehicle->load([
-            'assignedDriver',
             'journeys' => fn ($q) => $q->latest('start_time')->limit(50),
             'fuelEntries' => fn ($q) => $q->latest('entry_time')->limit(50),
             'maintenanceRecords' => fn ($q) => $q->latest('service_date')->limit(50),
             'documents',
         ]);
 
-        $totalDistance = $vehicle->journeys()
+        $totalDistance = (float) $vehicle->journeys()
             ->where('status', 'completed')
-            ->where('start_time', '>=', now()->subDays(90))
             ->sum('total_distance');
 
-        $totalFuel = $vehicle->fuelEntries()
-            ->where('entry_time', '>=', now()->subDays(90))
-            ->sum('quantity_litres');
+        $totalFuelLitres = (float) $vehicle->fuelEntries()->sum('quantity_litres');
+        $totalFuelCost = (float) $vehicle->fuelEntries()->sum('total_cost');
 
-        $liveAvgKmpl = $totalFuel > 0 ? round($totalDistance / $totalFuel, 2) : null;
+        $avgKmpl = $totalFuelLitres > 0 ? round($totalDistance / $totalFuelLitres, 2) : null;
 
         return response()->json([
             'vehicle' => new VehicleResource($vehicle),
@@ -91,7 +88,10 @@ class VehicleController extends Controller
             'fuel_entries' => \App\Http\Resources\FuelEntryResource::collection($vehicle->fuelEntries),
             'maintenance_records' => \App\Http\Resources\MaintenanceRecordResource::collection($vehicle->maintenanceRecords),
             'documents' => \App\Http\Resources\VehicleDocumentResource::collection($vehicle->documents),
-            'live_avg_kmpl' => $liveAvgKmpl,
+            'total_distance' => $totalDistance,
+            'total_fuel_litres' => $totalFuelLitres,
+            'total_fuel_cost' => $totalFuelCost,
+            'avg_kmpl' => $avgKmpl,
         ]);
     }
 }

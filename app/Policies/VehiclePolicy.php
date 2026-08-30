@@ -7,11 +7,6 @@ use App\Models\Vehicle;
 
 class VehiclePolicy
 {
-    /**
-     * CompanyScope already restricts *which* vehicles a query returns, so
-     * these checks are about *role*, not tenancy — a company_admin/dispatcher
-     * can manage vehicles, a driver can only view the one assigned to them.
-     */
     public function viewAny(User $user): bool
     {
         return $user->hasAnyRole(['company_admin', 'dispatcher', 'driver']);
@@ -19,11 +14,7 @@ class VehiclePolicy
 
     public function view(User $user, Vehicle $vehicle): bool
     {
-        if ($user->hasAnyRole(['company_admin', 'dispatcher'])) {
-            return true;
-        }
-
-        return $user->driver && $vehicle->assigned_driver_id === $user->driver->id;
+        return $user->hasAnyRole(['company_admin', 'dispatcher', 'driver']);
     }
 
     public function create(User $user): bool

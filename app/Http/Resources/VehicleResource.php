@@ -30,11 +30,11 @@ class VehicleResource extends JsonResource
                 'recorded_at' => $this->last_location_at,
                 'accuracy_meters' => $this->last_accuracy_meters !== null ? (float) $this->last_accuracy_meters : null,
             ]),
-            'assigned_driver' => $this->whenLoaded('assignedDriver', fn () => [
-                'id' => $this->assignedDriver->id,
-                'name' => $this->assignedDriver->name,
-                'phone' => $this->assignedDriver->phone,
-            ]),
+            // 'assigned_driver' => $this->whenLoaded('assignedDriver', fn () => [
+            //     'id' => $this->assignedDriver->id,
+            //     'name' => $this->assignedDriver->name,
+            //     'phone' => $this->assignedDriver->phone,
+            // ]),
             'created_at' => $this->created_at,
         ];
     }

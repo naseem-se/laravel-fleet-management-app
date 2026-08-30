@@ -21,14 +21,14 @@ class DriverResource extends JsonResource
             'license_expiring_soon' => $this->isLicenseExpiringSoon(),
             'status' => $this->status,
             'has_login' => ! is_null($this->user_id),
-            'assigned_vehicle' => $this->whenLoaded('assignedVehicle', fn () =>
-                $this->assignedVehicle->isNotEmpty()
-                    ? [
-                        'id' => $this->assignedVehicle->first()->id,
-                        'registration_number' => $this->assignedVehicle->first()->registration_number,
-                    ]
-                    : null
-            ),
+            // 'assigned_vehicle' => $this->whenLoaded('assignedVehicle', fn () =>
+            //     $this->assignedVehicle->isNotEmpty()
+            //         ? [
+            //             'id' => $this->assignedVehicle->first()->id,
+            //             'registration_number' => $this->assignedVehicle->first()->registration_number,
+            //         ]
+            //         : null
+            // ),
             'documents' => DriverDocumentResource::collection($this->whenLoaded('documents')),
             'profile_photo_url' => FileUrl::for($this->profile_photo_path),
             'created_at' => $this->created_at,

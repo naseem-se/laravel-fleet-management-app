@@ -33,10 +33,10 @@ class UpdateVehicleRequest extends FormRequest
             'fuel_type' => ['nullable', 'string', 'in:petrol,diesel,cng,electric,hybrid'],
             'tank_capacity_litres' => ['nullable', 'numeric', 'min:0'],
             'status' => ['sometimes', 'required', 'in:active,inactive,maintenance'],
-            'assigned_driver_id' => [
-                'nullable', 'integer',
-                Rule::exists('drivers', 'id')->where('company_id', $companyId),
-            ],
+            // 'assigned_driver_id' => [
+            //     'nullable', 'integer',
+            //     Rule::exists('drivers', 'id')->where('company_id', $companyId),
+            // ],
         ];
     }
 }

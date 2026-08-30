@@ -23,7 +23,6 @@
         <tr><td><strong>Total Fuel</strong></td><td>{{ number_format($data['total_fuel_litres'], 2) }} L</td></tr>
         <tr><td><strong>Total Fuel Cost</strong></td><td>{{ number_format($data['total_fuel_cost'], 2) }}</td></tr>
         <tr><td><strong>KMPL</strong></td><td>{{ $data['kmpl'] ?? '-' }}</td></tr>
-        <tr><td><strong>Fuel Cost / KM</strong></td><td>{{ $data['fuel_cost_per_km'] ?? '-' }}</td></tr>
         <tr><td><strong>Maintenance Cost</strong></td><td>{{ number_format($data['total_maintenance_cost'], 2) }}</td></tr>
     </table>
 

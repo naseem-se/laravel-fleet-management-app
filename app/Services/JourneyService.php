@@ -33,6 +33,12 @@ class JourneyService
                 ]);
             }
 
+            if ((float) $data['start_km'] < (float) $vehicle->current_odometer) {
+                throw ValidationException::withMessages([
+                    'start_km' => ["Starting odometer cannot be less than the vehicle's last recorded reading of {$vehicle->current_odometer} km."],
+                ]);
+            }
+
             $photoPath = $this->storePhoto($data['photo'], $driver->company_id, 'journeys/start');
 
             $journey = Journey::create([
