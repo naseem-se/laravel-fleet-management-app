@@ -16,13 +16,49 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            cd domains/nusvitahealth.com/public_html/api.fleet.management
-            git pull origin main
-            composer install --no-dev --optimize-autoloader
-            mkdir -p storage/backups
-            mysqldump -u ${{ secrets.DB_USER }} -p'${{ secrets.DB_PASS }}' ${{ secrets.DB_NAME }} > storage/backups/backup_$(date +%F_%H-%M-%S).sql
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            php artisan queue:restart
+              set -e
+
+              cd domains/nusvitahealth.com/public_html/api.fleet.management
+
+              echo "===== CURRENT DIRECTORY ====="
+              pwd
+
+              echo "===== GIT STATUS ====="
+              git status
+
+              echo "===== CURRENT COMMIT ====="
+              git rev-parse HEAD
+
+              echo "===== REMOTE ====="
+              git remote -v
+
+              echo "===== FETCHING ====="
+              git fetch origin main
+
+              echo "===== REMOTE COMMIT ====="
+              git rev-parse origin/main
+
+              echo "===== PULLING ====="
+              git pull origin main
+
+              echo "===== COMMIT AFTER PULL ====="
+              git rev-parse HEAD
+
+              composer install --no-dev --optimize-autoloader
+
+              mkdir -p storage/backups
+
+              mysqldump \
+                -u "${{ secrets.DB_USER }}" \
+                -p'${{ secrets.DB_PASS }}' \
+                "${{ secrets.DB_NAME }}" \
+                > "storage/backups/backup_$(date +%F_%H-%M-%S).sql"
+
+              php artisan migrate --force
+
+              php artisan optimize:clear
+              php artisan config:cache
+              php artisan route:cache
+              php artisan view:cache
+
+              php artisan queue:restart
