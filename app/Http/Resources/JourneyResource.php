@@ -13,6 +13,12 @@ class JourneyResource extends JsonResource
         return [
             'id' => $this->id,
             'status' => $this->status,
+            'purpose' => $this->purpose,
+            'detail_of_journey' => $this->detail_of_journey,
+            'officer_name' => $this->officer_name,
+            'signature' => $this->signature,
+            'pol_drawn' => $this->pol_drawn,
+            'remarks' => $this->remarks,
             'vehicle' => $this->whenLoaded('vehicle', fn () => [
                 'id' => $this->vehicle->id,
                 'registration_number' => $this->vehicle->registration_number,
@@ -20,6 +26,7 @@ class JourneyResource extends JsonResource
             'driver' => $this->whenLoaded('driver', fn () => [
                 'id' => $this->driver->id,
                 'name' => $this->driver->name,
+                'profile_photo_url' => FileUrl::for($this->driver->profile_photo_path),
             ]),
             'start' => [
                 'km' => $this->start_km,
@@ -43,19 +50,6 @@ class JourneyResource extends JsonResource
                 'recorded_at' => $this->vehicle->last_location_at,
                 'accuracy_meters' => $this->vehicle->last_accuracy_meters !== null ? (float) $this->vehicle->last_accuracy_meters : null,
             ] : null),
-            'location_summary' => $this->whenLoaded('locationSummary', fn () => $this->locationSummary ? [
-                'point_count' => $this->locationSummary->point_count,
-                'bounds' => [
-                    'min_lat' => $this->locationSummary->min_lat,
-                    'max_lat' => $this->locationSummary->max_lat,
-                    'min_lng' => $this->locationSummary->min_lng,
-                    'max_lng' => $this->locationSummary->max_lng,
-                ],
-                'max_speed_kmh' => $this->locationSummary->max_speed_kmh,
-                'avg_speed_kmh' => $this->locationSummary->avg_speed_kmh,
-                'archived_at' => $this->locationSummary->archived_at,
-            ] : null),
-            'purpose' => $this->purpose,
         ];
     }
 }

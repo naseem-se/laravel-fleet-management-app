@@ -81,5 +81,14 @@ class JourneyController extends Controller
 
         return response()->json(['message' => 'Journey deleted.']);
     }
+
+    public function vehicleDocuments(Journey $journey)
+    {
+        $this->authorize('view', $journey); // own journey only, or admin/dispatcher — same rule as viewing the journey itself
+
+        return \App\Http\Resources\VehicleDocumentResource::collection(
+            $journey->vehicle->documents
+        );
+    }
     
 }

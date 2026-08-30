@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function () {
 
             Route::middleware('role:company_admin|dispatcher|driver')->group(function () {
                 Route::get('journeys/{journey}', [JourneyController::class, 'show']);
+                Route::get('journeys/{journey}/vehicle-documents', [JourneyController::class, 'vehicleDocuments']);
                 Route::get('drivers/{driver}/performance', [DriverController::class, 'performance']);
                 Route::post('drivers/{driver}/photo', [DriverController::class, 'updatePhoto']);
                 Route::get('drivers/{driver}/documents', [DriverDocumentController::class, 'index']);

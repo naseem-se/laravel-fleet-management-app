@@ -24,6 +24,8 @@ class StartJourneyRequest extends FormRequest
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
             'purpose' => ['nullable', 'string', 'max:150'],
+            'detail_of_journey' => ['nullable', 'string', 'max:1000'],
+            'officer_name' => ['nullable', 'string', 'max:150'],
         ];
     }
 }

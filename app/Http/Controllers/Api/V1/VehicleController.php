@@ -67,7 +67,7 @@ class VehicleController extends Controller
         $this->authorize('view', $vehicle);
 
         $vehicle->load([
-            'journeys' => fn ($q) => $q->latest('start_time')->limit(50),
+            'journeys' => fn ($q) => $q->with('driver')->latest('start_time')->limit(50),
             'fuelEntries' => fn ($q) => $q->latest('entry_time')->limit(50),
             'maintenanceRecords' => fn ($q) => $q->latest('service_date')->limit(50),
             'documents',

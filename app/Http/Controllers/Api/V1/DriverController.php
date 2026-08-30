@@ -28,6 +28,21 @@ class DriverController extends Controller
         return DriverResource::collection($drivers);
     }
 
+    public function vehiclesUsed(Request $request)
+    {
+        $driver = $request->user()->driver;
+
+        if (! $driver) {
+            return response()->json(['data' => []]);
+        }
+
+        $vehicles = \App\Models\Vehicle::whereHas('journeys', fn ($q) => $q->where('driver_id', $driver->id))
+            ->withCount(['journeys as trips_count' => fn ($q) => $q->where('driver_id', $driver->id)])
+            ->get(['id', 'registration_number', 'make', 'model']);
+
+        return response()->json(['data' => $vehicles]);
+    }
+
     public function store(StoreDriverRequest $request)
     {
         $driver = $this->drivers->create($request->user()->company, $request->validated());

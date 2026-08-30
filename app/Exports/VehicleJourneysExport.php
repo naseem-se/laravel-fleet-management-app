@@ -20,17 +20,28 @@ class VehicleJourneysExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return ['Start Time', 'End Time', 'Start KM', 'End KM', 'Distance (KM)'];
+        return [
+            'Date', 'Time From', 'Time To', 'Detail of Journey', 'Purpose of Journey',
+            'Name of Officer/Official', 'Meter Reading From', 'Meter Reading To',
+            'KM Covered', 'Signature', 'P.O.L. Drawn', 'Remarks',
+        ];
     }
 
     public function map($journey): array
     {
         return [
-            optional($journey->start_time)->format('Y-m-d H:i'),
-            optional($journey->end_time)->format('Y-m-d H:i'),
+            optional($journey->start_time)->format('Y-m-d'),
+            optional($journey->start_time)->format('H:i'),
+            optional($journey->end_time)->format('H:i'),
+            $journey->detail_of_journey ?? '',
+            $journey->purpose ?? '',
+            $journey->officer_name ?? $journey->driver_name ?? '',
             $journey->start_km,
             $journey->end_km,
             $journey->total_distance,
+            $journey->signature ?? '',
+            $journey->pol_drawn ?? '',
+            $journey->remarks ?? '',
         ];
     }
 }

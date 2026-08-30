@@ -42,10 +42,24 @@ class ReportService
             'kmpl' => $totalFuelLitres > 0 ? round($totalDistance / $totalFuelLitres, 2) : null,
             'fuel_cost_per_km' => $totalDistance > 0 ? round($totalFuelCost / $totalDistance, 2) : null,
             'total_maintenance_cost' => (float) $totalMaintenanceCost,
-            'journeys' => $journeys->get(['id', 'start_time', 'end_time', 'start_km', 'end_km', 'total_distance', 'start_photo_path', 'end_photo_path'])
+            // 'journeys' => $journeys->get(['id', 'start_time', 'end_time', 'start_km', 'end_km', 'total_distance', 'start_photo_path', 'end_photo_path'])
+            //     ->each(function ($j) {
+            //         $j->start_photo_url = \App\Support\FileUrl::for($j->start_photo_path);
+            //         $j->end_photo_url = \App\Support\FileUrl::for($j->end_photo_path);
+            //     }),
+
+            'journeys' => $journeys->with('driver:id,name')
+                ->get([
+                    'id', 'driver_id', 'purpose', 'detail_of_journey', 'officer_name',
+                    'signature', 'pol_drawn', 'remarks',
+                    'start_time', 'end_time', 'start_km', 'end_km', 'total_distance', 'start_photo_path', 'end_photo_path'
+                ])
                 ->each(function ($j) {
-                    $j->start_photo_url = \App\Support\FileUrl::for($j->start_photo_path);
-                    $j->end_photo_url = \App\Support\FileUrl::for($j->end_photo_path);
+                    $j->driver_name = $j->driver?->name;
+                })
+                ->each(function ($i) {
+                    $i->start_photo_url = \App\Support\FileUrl::for($i->start_photo_path);
+                    $i->end_photo_url = \App\Support\FileUrl::for($i->end_photo_path);
                 }),
         ];
     }

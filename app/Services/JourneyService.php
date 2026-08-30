@@ -45,6 +45,8 @@ class JourneyService
                 'vehicle_id' => $vehicle->id,
                 'driver_id' => $driver->id,
                 'purpose' => $data['purpose'] ?? null,
+                'detail_of_journey' => $data['detail_of_journey'] ?? null,
+                'officer_name' => $data['officer_name'] ?? null,
                 'status' => 'active',
                 'start_km' => $data['start_km'],
                 'start_photo_path' => $photoPath,
@@ -122,6 +124,9 @@ class JourneyService
                 'end_time' => $endTime,
                 'total_distance' => $data['end_km'] - $journey->start_km,
                 'duration_minutes' => $journey->start_time->diffInMinutes($endTime),
+                'signature' => $data['signature'] ?? null,
+                'pol_drawn' => $data['pol_drawn'] ?? null,
+                'remarks' => $data['remarks'] ?? null,
             ]);
 
             $journey->vehicle()->update(['current_odometer' => $data['end_km']]);

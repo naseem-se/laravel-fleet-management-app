@@ -18,6 +18,9 @@ class EndJourneyRequest extends FormRequest
             'photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent],
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
+            'signature' => ['nullable', 'string', 'max:150'],
+            'pol_drawn' => ['nullable', 'numeric', 'min:0'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }
