@@ -13,7 +13,7 @@ class Journey extends Model
     use HasFactory, BelongsToCompany;
 
     protected $fillable = [
-        'company_id', 'vehicle_id', 'driver_id', 'status',
+        'company_id', 'vehicle_id', 'driver_id', 'purpose', 'status',
         'start_km', 'start_photo_path', 'start_lat', 'start_lng', 'start_time',
         'end_km', 'end_photo_path', 'end_lat', 'end_lng', 'end_time',
         'total_distance', 'duration_minutes',

@@ -17,8 +17,7 @@ class DriverPolicy
         if ($user->hasAnyRole(['company_admin', 'dispatcher'])) {
             return true;
         }
-
-        // A driver can view their own record (e.g. "my profile" / performance screen)
+        
         return $user->driver && $user->driver->id === $driver->id;
     }
 

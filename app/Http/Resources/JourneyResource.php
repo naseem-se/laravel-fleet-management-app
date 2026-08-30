@@ -55,6 +55,7 @@ class JourneyResource extends JsonResource
                 'avg_speed_kmh' => $this->locationSummary->avg_speed_kmh,
                 'archived_at' => $this->locationSummary->archived_at,
             ] : null),
+            'purpose' => $this->purpose,
         ];
     }
 }

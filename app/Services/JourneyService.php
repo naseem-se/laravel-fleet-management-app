@@ -44,6 +44,7 @@ class JourneyService
             $journey = Journey::create([
                 'vehicle_id' => $vehicle->id,
                 'driver_id' => $driver->id,
+                'purpose' => $data['purpose'] ?? null,
                 'status' => 'active',
                 'start_km' => $data['start_km'],
                 'start_photo_path' => $photoPath,

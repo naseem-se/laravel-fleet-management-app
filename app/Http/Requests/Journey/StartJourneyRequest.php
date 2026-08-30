@@ -23,6 +23,7 @@ class StartJourneyRequest extends FormRequest
             'photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent], // 5MB — client should compress before upload, see PWA notes
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
+            'purpose' => ['nullable', 'string', 'max:150'],
         ];
     }
 }

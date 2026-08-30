@@ -8,6 +8,7 @@ use App\Http\Requests\DriverDocument\UpdateDriverDocumentRequest;
 use App\Http\Resources\DriverDocumentResource;
 use App\Models\Driver;
 use App\Models\DriverDocument;
+use App\Models\Vehicle;
 use App\Services\DriverDocumentService;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,15 @@ class DriverDocumentController extends Controller
 {
     public function __construct(protected DriverDocumentService $documents)
     {
+    }
+
+    public function index(Driver $driver)
+    {
+        $this->authorize('view', $driver);
+
+        return DriverDocumentResource::collection(
+            $driver->documents()->orderByDesc('created_at')->get()
+        );
     }
 
     public function store(StoreDriverDocumentRequest $request, Driver $driver)
@@ -36,6 +46,21 @@ class DriverDocumentController extends Controller
         $this->documents->delete($driverDocument);
 
         return response()->json(['message' => 'Document deleted.']);
+    }
+
+    public function vehiclesUsed(Request $request)
+    {
+        $driver = $request->user()->driver;
+
+        if (! $driver) {
+            return response()->json(['data' => []]);
+        }
+
+        $vehicles = Vehicle::whereHas('journeys', fn ($q) => $q->where('driver_id', $driver->id))
+            ->withCount(['journeys as trips_count' => fn ($q) => $q->where('driver_id', $driver->id)])
+            ->get(['id', 'registration_number', 'make', 'model']);
+
+        return response()->json(['data' => $vehicles]);
     }
 
     public function expiring(Request $request)
