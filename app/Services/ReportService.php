@@ -51,15 +51,25 @@ class ReportService
             'journeys' => $journeys->with('driver:id,name')
                 ->get([
                     'id', 'driver_id', 'purpose', 'detail_of_journey', 'officer_name',
-                    'signature', 'pol_drawn', 'remarks',
-                    'start_time', 'end_time', 'start_km', 'end_km', 'total_distance', 'start_photo_path', 'end_photo_path'
+                    'signature', 'pol_drawn', 'pol_invoice_photo_path',
+                    'start_time', 'end_time', 'start_km', 'end_km', 'total_distance',
+                    'start_photo_path', 'end_photo_path',
                 ])
                 ->each(function ($j) {
-                    $j->driver_name = $j->driver?->name;
-                })
-                ->each(function ($i) {
-                    $i->start_photo_url = \App\Support\FileUrl::for($i->start_photo_path);
-                    $i->end_photo_url = \App\Support\FileUrl::for($i->end_photo_path);
+                    $j->driver_name = $j->driver?->name ?? '-';
+                    $j->purpose_display = $j->purpose ?: '-';
+                    $j->detail_display = $j->detail_of_journey ?: '-';
+                    $j->officer_display = $j->officer_name ?: '-';
+                    $j->signature_display = $j->signature ?: '-';
+                    $j->pol_display = $j->pol_drawn > 0 ? number_format((float) $j->pol_drawn, 2) : '0.00';
+                    $j->start_time_display = $j->start_time ? $j->start_time->format('Y-m-d h:i A') : '-';
+                    $j->end_time_display = $j->end_time ? $j->end_time->format('h:i A') : '-';
+                    $j->start_km_display = $j->start_km ?? '-';
+                    $j->end_km_display = $j->end_km ?? '-';
+                    $j->distance_display = $j->total_distance ?? '-';
+                    $j->start_photo_url = \App\Support\FileUrl::for($j->start_photo_path);
+                    $j->end_photo_url = \App\Support\FileUrl::for($j->end_photo_path);
+                    $j->pol_invoice_url = $j->pol_drawn > 0 ? \App\Support\FileUrl::for($j->pol_invoice_photo_path) : null;
                 }),
         ];
     }

@@ -15,11 +15,14 @@ class EndJourneyRequest extends FormRequest
     {
         return [
             'end_km' => ['required', 'numeric', 'min:0'],
-            'photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent],
+            'photo' => ['required', 'image', 'max:5120'],
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
             'signature' => ['nullable', 'string', 'max:150'],
             'pol_drawn' => ['nullable', 'numeric', 'min:0'],
+            // Only required to be a genuine image if actually provided —
+            // no invoice at all is a perfectly normal, common case.
+            'pol_invoice_photo' => ['nullable', 'image', 'max:5120', new \App\Rules\ValidImageContent],
             'remarks' => ['nullable', 'string', 'max:1000'],
         ];
     }

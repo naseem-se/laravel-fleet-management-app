@@ -127,9 +127,46 @@ class ReportController extends Controller
         };
     }
 
+    public static function photoDataUri(?string $storagePath): ?string
+    {
+        if (! $storagePath) {
+            return null;
+        }
+
+        try {
+            $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'));
+            if (! $disk->exists($storagePath)) {
+                return null;
+            }
+
+            $contents = $disk->get($storagePath);
+
+            $mime = null;
+            if (method_exists($disk, 'mimeType')) {
+                $mime = $disk->mimeType($storagePath);
+            } elseif (method_exists($disk, 'getMimeType')) {
+                $mime = $disk->getMimeType($storagePath);
+            }
+
+            if (! $mime && method_exists($disk, 'path')) {
+                $localPath = $disk->path($storagePath);
+                if (is_file($localPath)) {
+                    $mime = mime_content_type($localPath);
+                }
+            }
+
+            return 'data:'.($mime ?: 'image/jpeg').';base64,'.base64_encode($contents);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
     /** Guarantees a real JSON error response (with CORS headers intact) and a logged stack trace instead of a raw PHP fatal. */
     protected function safely(callable $action, string $context)
     {
+        $previousDisplayErrors = ini_get('display_errors');
+        ini_set('display_errors', '0');
+
         try {
             return $action();
         } catch (Throwable $e) {
@@ -144,6 +181,8 @@ class ReportController extends Controller
                     ? "Report generation failed: {$e->getMessage()}"
                     : 'Report generation failed. Please try again or contact support.',
             ], 500);
+        } finally {
+            ini_set('display_errors', $previousDisplayErrors);
         }
     }
 }

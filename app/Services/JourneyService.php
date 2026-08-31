@@ -115,6 +115,12 @@ class JourneyService
             $endPhotoPath = $this->storePhoto($data['photo'], $journey->company_id, 'journeys/end');
             $endTime = now();
 
+            $polDrawn = isset($data['pol_drawn']) ? (float) $data['pol_drawn'] : 0;
+            $polInvoicePath = null;
+            if ($polDrawn > 0 && isset($data['pol_invoice_photo'])) {
+                $polInvoicePath = $this->storePhoto($data['pol_invoice_photo'], $journey->company_id, 'journeys/pol-invoices');
+            }
+
             $journey->update([
                 'status' => 'completed',
                 'end_km' => $data['end_km'],
@@ -125,7 +131,8 @@ class JourneyService
                 'total_distance' => $data['end_km'] - $journey->start_km,
                 'duration_minutes' => $journey->start_time->diffInMinutes($endTime),
                 'signature' => $data['signature'] ?? null,
-                'pol_drawn' => $data['pol_drawn'] ?? null,
+                'pol_drawn' => $polDrawn,
+                'pol_invoice_photo_path' => $polInvoicePath,
                 'remarks' => $data['remarks'] ?? null,
             ]);
 
@@ -142,6 +149,7 @@ class JourneyService
         DB::transaction(function () use ($journey) {
             $this->deletePhoto($journey->start_photo_path);
             $this->deletePhoto($journey->end_photo_path);
+            $this->deletePhoto($journey->pol_invoice_photo_path);
 
             foreach ($journey->fuelEntries as $fuelEntry) {
                 $this->deletePhoto($fuelEntry->receipt_photo_path);

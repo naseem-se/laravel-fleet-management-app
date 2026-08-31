@@ -18,6 +18,7 @@ class JourneyResource extends JsonResource
             'officer_name' => $this->officer_name,
             'signature' => $this->signature,
             'pol_drawn' => $this->pol_drawn,
+            'pol_invoice_photo_url' => FileUrl::for($this->pol_invoice_photo_path),
             'remarks' => $this->remarks,
             'vehicle' => $this->whenLoaded('vehicle', fn () => [
                 'id' => $this->vehicle->id,
