@@ -65,61 +65,26 @@
                     <td>{{ $journey->end_km_display }}</td>
                     <td>{{ $journey->distance_display }}</td>
                     <td>{{ $journey->signature_display }}</td>
-                    {{-- <td>
+                    <td>
                         {{ $journey->pol_display }}
                         @if ($invoiceImg)
-                            <br><img src="{{ $invoiceImg }}" class="thumb">
+                            <br><a href="{{ $invoiceImg }}" target="_blank" rel="noopener noreferrer">Open invoice</a>
                         @elseif ($journey->pol_drawn > 0)
                             <br><span class="no-photo">no invoice</span>
                         @endif
                     </td>
                     <td>
                         @if ($startImg)
-                            <img src="{{ $startImg }}" class="thumb">
+                            <a href="{{ $startImg }}" target="_blank" rel="noopener noreferrer">Open start photo</a>
                         @else
                             <span class="no-photo">no photo</span>
                         @endif
                         @if ($endImg)
-                            <img src="{{ $endImg }}" class="thumb">
+                            <br><a href="{{ $endImg }}" target="_blank" rel="noopener noreferrer">Open end photo</a>
                         @else
-                            <span class="no-photo">no photo</span>
-                        @endif
-                    </td> --}}
-
-                    <td>
-                        {{ $journey->pol_display }}
-
-                        @if ($invoiceImg)
-                            <br>
-                            <a href="{{ $invoiceImg }}" target="_blank" rel="noopener noreferrer">
-                                View Invoice
-                            </a>
-                        @elseif ($journey->pol_drawn > 0)
-                            <br>
-                            <span class="no-photo">no invoice</span>
+                            <br><span class="no-photo">no photo</span>
                         @endif
                     </td>
-
-                    <td>
-                        @if ($startImg)
-                            <a href="{{ $startImg }}" target="_blank" rel="noopener noreferrer">
-                                View Start Photo
-                            </a>
-                        @else
-                            <span class="no-photo">no photo</span>
-                        @endif
-
-                        <br>
-
-                        @if ($endImg)
-                            <a href="{{ $endImg }}" target="_blank" rel="noopener noreferrer">
-                                View End Photo
-                            </a>
-                        @else
-                            <span class="no-photo">no photo</span>
-                        @endif
-                    </td>
-
                 </tr>
             @endforeach
         </tbody>
