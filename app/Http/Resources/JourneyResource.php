@@ -8,18 +8,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class JourneyResource extends JsonResource
 {
+    protected function clean($value)
+    {
+        if (is_string($value) && in_array(strtolower(trim($value)), ['undefined', 'null'], true)) {
+            return null;
+        }
+        return $value;
+    }
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'status' => $this->status,
-            'purpose' => $this->purpose,
-            'detail_of_journey' => $this->detail_of_journey,
-            'officer_name' => $this->officer_name,
-            'signature' => $this->signature,
+            'purpose' => $this->clean($this->purpose),
+            'detail_of_journey' => $this->clean($this->detail_of_journey),
+            'officer_name' => $this->clean($this->officer_name),
+            'signature' => $this->clean($this->signature),
             'pol_drawn' => $this->pol_drawn,
             'pol_invoice_photo_url' => FileUrl::for($this->pol_invoice_photo_path),
-            'remarks' => $this->remarks,
+            'remarks' => $this->clean($this->remarks),
             'vehicle' => $this->whenLoaded('vehicle', fn () => [
                 'id' => $this->vehicle->id,
                 'registration_number' => $this->vehicle->registration_number,

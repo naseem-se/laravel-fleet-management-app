@@ -56,11 +56,13 @@ class ReportService
                     'start_photo_path', 'end_photo_path',
                 ])
                 ->each(function ($j) {
+                    $clean = fn ($v) => (is_string($v) && in_array(strtolower(trim($v)), ['undefined', 'null'], true)) ? null : $v;
+
                     $j->driver_name = $j->driver?->name ?? '-';
-                    $j->purpose_display = $j->purpose ?: '-';
-                    $j->detail_display = $j->detail_of_journey ?: '-';
-                    $j->officer_display = $j->officer_name ?: '-';
-                    $j->signature_display = $j->signature ?: '-';
+                    $j->purpose_display = $clean($j->purpose) ?: '-';
+                    $j->detail_display = $clean($j->detail_of_journey) ?: '-';
+                    $j->officer_display = $clean($j->officer_name) ?: '-';
+                    $j->signature_display = $clean($j->signature) ?: '-';
                     $j->pol_display = $j->pol_drawn > 0 ? number_format((float) $j->pol_drawn, 2) : '0.00';
                     $j->start_time_display = $j->start_time ? $j->start_time->format('Y-m-d h:i A') : '-';
                     $j->end_time_display = $j->end_time ? $j->end_time->format('h:i A') : '-';
