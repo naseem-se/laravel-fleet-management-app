@@ -8,7 +8,6 @@ use App\Http\Requests\DriverDocument\UpdateDriverDocumentRequest;
 use App\Http\Resources\DriverDocumentResource;
 use App\Models\Driver;
 use App\Models\DriverDocument;
-use App\Models\Vehicle;
 use App\Services\DriverDocumentService;
 use Illuminate\Http\Request;
 

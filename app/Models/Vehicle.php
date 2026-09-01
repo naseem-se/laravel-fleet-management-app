@@ -9,33 +9,33 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
 
 class Vehicle extends Model
 {
-    use HasFactory, SoftDeletes, BelongsToCompany, LogsActivity;
+    use HasFactory, SoftDeletes, BelongsToCompany;
 
     protected $fillable = [
         'company_id', 'assigned_driver_id', 'registration_number', 'qr_code_value',
         'make', 'model', 'year', 'vehicle_type', 'engine_number', 'chassis_number',
-        'fuel_type', 'tank_capacity_litres', 'current_odometer', 'status',
+        'fuel_type', 'tank_capacity_litres', 'current_odometer', 'current_fuel_litres',
+        'mileage_rated', 'status',
     ];
 
     protected $casts = [
         'tank_capacity_litres' => 'decimal:2',
         'current_odometer' => 'decimal:2',
+        'current_fuel_litres' => 'decimal:2',
         'avg_kmpl_cached' => 'decimal:2',
+        'mileage_rated' => 'decimal:2',
         'last_lat' => 'decimal:7',
         'last_lng' => 'decimal:7',
+        'last_accuracy_meters' => 'decimal:2',
         'last_location_at' => 'datetime',
     ];
 
     protected static function booted(): void
     {
         static::creating(function (Vehicle $vehicle) {
-            // Random token, never derived from the plate number — see design notes
-            // in the project brief on why: prevents QR spoofing from a guessed plate.
             if (empty($vehicle->qr_code_value)) {
                 $vehicle->qr_code_value = (string) Str::uuid();
             }
@@ -70,12 +70,5 @@ class Vehicle extends Model
     public function activeJourney(): HasMany
     {
         return $this->hasMany(Journey::class)->where('status', 'active');
-    }
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logOnly(['status', 'assigned_driver_id'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs();
     }
 }

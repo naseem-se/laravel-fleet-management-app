@@ -15,13 +15,16 @@ class EndJourneyRequest extends FormRequest
     {
         return [
             'end_km' => ['required', 'numeric', 'min:0'],
-            'photo' => ['required', 'image', 'max:5120'],
+            'photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent],
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
             'signature' => ['nullable', 'string', 'max:150'],
-            'pol_drawn' => ['nullable', 'numeric', 'min:0'],
-            'pol_invoice_photo' => ['nullable', 'image', 'max:5120', new \App\Rules\ValidImageContent],
-            'remarks' => ['nullable', 'string', 'max:1000'],
+            // pol_drawn / pol_invoice_photo intentionally removed — any
+            // fuel purchased during a trip is logged as its own Fuel Entry
+            // (linked via journey_id) while the journey is active. The
+            // report pulls fuel totals and receipts from those linked
+            // entries instead of asking the driver to re-enter the same
+            // information a second time at journey end.
         ];
     }
 }

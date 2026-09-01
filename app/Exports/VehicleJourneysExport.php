@@ -2,10 +2,8 @@
 
 namespace App\Exports;
 
-use App\Http\Controllers\Api\V1\ReportController;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Concerns\WithDrawings;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -29,7 +27,7 @@ class VehicleJourneysExport implements FromCollection, WithHeadings, WithMapping
         return [
             'Date', 'Time From', 'Time To', 'Driver', 'Detail of Journey', 'Purpose of Journey',
             'Officer/Official', 'Meter From', 'Meter To', 'KM Covered', 'Signature',
-            'P.O.L. Drawn', 'Start Photo', 'End Photo', 'P.O.L. Invoice',
+            'Start Photo', 'End Photo',
         ];
     }
 
@@ -38,7 +36,7 @@ class VehicleJourneysExport implements FromCollection, WithHeadings, WithMapping
         return [
             optional($journey->start_time)->format('Y-m-d') ?? '-',
             $journey->start_time ? $journey->start_time->format('h:i A') : '-',
-            $journey->end_time_display,
+            $journey->end_time ? $journey->end_time->format('h:i A') : '-',
             $journey->driver_name,
             $journey->detail_display,
             $journey->purpose_display,
@@ -47,19 +45,11 @@ class VehicleJourneysExport implements FromCollection, WithHeadings, WithMapping
             $journey->end_km_display,
             $journey->distance_display,
             $journey->signature_display,
-            $journey->pol_display,
-            '', // Start Photo — image drawn over this cell below, left blank as text
-            '', // End Photo
-            '', // P.O.L. Invoice
+            '',
+            '',
         ];
     }
 
-    /**
-     * Draws each journey's photos over their designated cells, row by row.
-     * Row 1 is the header, so data starts at row 2 — this is why each
-     * drawing's coordinate is $index + 2, matching the same order the
-     * collection was mapped in above.
-     */
     public function registerEvents(): array
     {
         return [
@@ -68,23 +58,14 @@ class VehicleJourneysExport implements FromCollection, WithHeadings, WithMapping
 
                 foreach ($this->journeys->values() as $index => $journey) {
                     $row = $index + 2;
-
-                    $this->drawThumbnail($event, $disk, $journey->start_photo_path, "M{$row}");
-                    $this->drawThumbnail($event, $disk, $journey->end_photo_path, "N{$row}");
-
-                    if ($journey->pol_drawn > 0) {
-                        $this->drawThumbnail($event, $disk, $journey->pol_invoice_photo_path, "O{$row}");
-                    }
-
-                    $event->sheet->getDelegate()->getRowDimension($row)->setRowHeight(60);
+                    $this->drawThumbnail($event, $disk, $journey->start_photo_path, "L{$row}");
+                    $this->drawThumbnail($event, $disk, $journey->end_photo_path, "M{$row}");
+                    $event->sheet->getDelegate()->getRowDimension($row)->setRowHeight(55);
                 }
 
+                $event->sheet->getDelegate()->getColumnDimension('L')->setWidth(12);
                 $event->sheet->getDelegate()->getColumnDimension('M')->setWidth(12);
-                $event->sheet->getDelegate()->getColumnDimension('N')->setWidth(12);
-                $event->sheet->getDelegate()->getColumnDimension('O')->setWidth(12);
             },
-
-            
         ];
     }
 
@@ -94,11 +75,9 @@ class VehicleJourneysExport implements FromCollection, WithHeadings, WithMapping
             return;
         }
 
-        $absolutePath = $disk->path($path);
-
         $drawing = new Drawing();
-        $drawing->setPath($absolutePath);
-        $drawing->setHeight(60);
+        $drawing->setPath($disk->path($path));
+        $drawing->setHeight(55);
         $drawing->setCoordinates($cell);
         $drawing->setWorksheet($event->sheet->getDelegate());
     }

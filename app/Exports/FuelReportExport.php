@@ -20,19 +20,20 @@ class FuelReportExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return ['Date', 'Vehicle', 'Driver', 'Litres', 'Rate/Litre', 'Total Cost', 'Odometer'];
+        return ['Date', 'Vehicle', 'Driver', 'Litres', 'Rate/Litre', 'Total Cost', 'Odometer', 'Linked Trip Date'];
     }
 
     public function map($entry): array
     {
         return [
-            $entry->entry_time->format('Y-m-d H:i'),
+            $entry->entry_time->format('Y-m-d h:i A'),
             $entry->vehicle->registration_number ?? '-',
             $entry->driver->name ?? '-',
             $entry->quantity_litres,
             $entry->rate_per_litre,
             $entry->total_cost,
             $entry->odometer_reading,
+            $entry->journey?->start_time?->format('Y-m-d') ?? '-',
         ];
     }
 }

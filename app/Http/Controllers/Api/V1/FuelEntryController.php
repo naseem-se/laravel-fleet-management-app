@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Fuel\StoreFuelEntryAdminRequest;
 use App\Http\Requests\Fuel\StoreFuelEntryRequest;
+use App\Http\Requests\Fuel\UpdateFuelEntryRequest;
 use App\Http\Resources\FuelEntryResource;
 use App\Models\FuelEntry;
 use App\Services\FuelService;
@@ -19,9 +21,28 @@ class FuelEntryController extends Controller
     {
         $entry = $this->fuel->create($request->user()->driver, $request->validated());
 
-        return (new FuelEntryResource($entry))
-            ->response()
-            ->setStatusCode(201);
+        return (new FuelEntryResource($entry))->response()->setStatusCode(201);
+    }
+
+    public function storeAdmin(StoreFuelEntryAdminRequest $request)
+    {
+        $entry = $this->fuel->createManual($request->user()->company_id, $request->validated());
+
+        return (new FuelEntryResource($entry))->response()->setStatusCode(201);
+    }
+
+    public function update(UpdateFuelEntryRequest $request, FuelEntry $fuelEntry)
+    {
+        $entry = $this->fuel->update($fuelEntry, $request->validated());
+
+        return new FuelEntryResource($entry);
+    }
+
+    public function destroy(FuelEntry $fuelEntry)
+    {
+        $this->fuel->delete($fuelEntry);
+
+        return response()->json(['message' => 'Fuel entry deleted.']);
     }
 
     public function index(Request $request)
@@ -32,6 +53,10 @@ class FuelEntryController extends Controller
 
         if ($request->filled('vehicle_id')) {
             $query->where('vehicle_id', $request->input('vehicle_id'));
+        }
+
+        if ($request->filled('journey_id')) {
+            $query->where('journey_id', $request->input('journey_id'));
         }
 
         if ($request->filled('from') && $request->filled('to')) {
@@ -45,14 +70,7 @@ class FuelEntryController extends Controller
             $query->latest('entry_time')->paginate((int) $request->input('per_page', 20))
         );
     }
-    public function storeAdmin(\App\Http\Requests\Fuel\StoreFuelEntryAdminRequest $request)
-    {
-        $entry = $this->fuel->createManual($request->user()->company_id, $request->validated());
 
-        return (new FuelEntryResource($entry))
-            ->response()
-            ->setStatusCode(201);
-    }
     public function mine(Request $request)
     {
         $entries = $request->user()->driver
@@ -62,19 +80,5 @@ class FuelEntryController extends Controller
             ->paginate((int) $request->input('per_page', 20));
 
         return FuelEntryResource::collection($entries);
-    }
-
-    public function update(\App\Http\Requests\Fuel\UpdateFuelEntryRequest $request, \App\Models\FuelEntry $fuelEntry)
-    {
-        $entry = $this->fuel->update($fuelEntry, $request->validated());
-
-        return new FuelEntryResource($entry);
-    }
-
-    public function destroy(\App\Models\FuelEntry $fuelEntry)
-    {
-        $this->fuel->delete($fuelEntry);
-
-        return response()->json(['message' => 'Fuel entry deleted.']);
     }
 }

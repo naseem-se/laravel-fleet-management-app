@@ -23,7 +23,12 @@ class StoreFuelEntryRequest extends FormRequest
                 'nullable', 'integer',
                 Rule::exists('journeys', 'id')->where('company_id', $this->user()->company_id),
             ],
-            'quantity_litres' => ['required', 'numeric', 'min:0.1'],
+            // Driver enters what they actually paid and the price per
+            // litre off the pump — litres are derived from these two,
+            // never typed in directly (a pump receipt shows total and
+            // rate, not a pre-calculated litre figure most drivers would
+            // get wrong doing the division by hand).
+            'total_price' => ['required', 'numeric', 'min:0.01'],
             'rate_per_litre' => ['required', 'numeric', 'min:0.01'],
             'odometer_reading' => ['required', 'numeric', 'min:0'],
             'receipt_photo' => ['required', 'image', 'max:5120', new \App\Rules\ValidImageContent],

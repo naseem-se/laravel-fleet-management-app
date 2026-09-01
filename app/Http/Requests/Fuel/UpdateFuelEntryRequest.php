@@ -14,7 +14,7 @@ class UpdateFuelEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quantity_litres' => ['sometimes', 'required', 'numeric', 'min:0.1'],
+            'total_price' => ['sometimes', 'required', 'numeric', 'min:0.01'],
             'rate_per_litre' => ['sometimes', 'required', 'numeric', 'min:0.01'],
             'odometer_reading' => ['sometimes', 'required', 'numeric', 'min:0'],
             'entry_time' => ['sometimes', 'required', 'date'],

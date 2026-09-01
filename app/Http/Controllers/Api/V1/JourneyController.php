@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Journey\EndJourneyRequest;
 use App\Http\Requests\Journey\PingJourneyRequest;
 use App\Http\Requests\Journey\StartJourneyRequest;
+use App\Http\Requests\Journey\UpdateJourneyRequest;
 use App\Http\Resources\JourneyResource;
 use App\Models\Journey;
 use App\Services\JourneyService;
@@ -37,10 +38,25 @@ class JourneyController extends Controller
     {
         $journey = $this->journeys->end($journey, $request->validated());
 
-        return new JourneyResource($journey->load(['vehicle', 'driver']));
+        return new JourneyResource($journey->load(['vehicle', 'driver', 'fuelEntries']));
     }
 
-    /** The logged-in driver's own in-progress journey, if any. */
+    public function update(UpdateJourneyRequest $request, Journey $journey)
+    {
+        $journey = $this->journeys->updateDetails($journey, $request->validated());
+
+        return new JourneyResource($journey);
+    }
+
+    public function destroy(Journey $journey)
+    {
+        $this->authorize('delete', $journey);
+
+        $this->journeys->delete($journey);
+
+        return response()->json(['message' => 'Journey deleted.']);
+    }
+
     public function current(Request $request)
     {
         $journey = $request->user()->driver
@@ -54,7 +70,6 @@ class JourneyController extends Controller
             : response()->json(['data' => null]);
     }
 
-    /** Admin/dispatcher live map — every active journey across the company. */
     public function live()
     {
         $this->authorize('viewAny', Journey::class);
@@ -70,25 +85,15 @@ class JourneyController extends Controller
     {
         $this->authorize('view', $journey);
 
-        return new JourneyResource($journey->load(['vehicle', 'driver', 'fuelEntries', 'locations', 'locationSummary']));
-    }
-
-    public function destroy(Journey $journey)
-    {
-        $this->authorize('delete', $journey);
-
-        $this->journeys->delete($journey);
-
-        return response()->json(['message' => 'Journey deleted.']);
+        return new JourneyResource($journey->load(['vehicle', 'driver', 'fuelEntries']));
     }
 
     public function vehicleDocuments(Journey $journey)
     {
-        $this->authorize('view', $journey); // own journey only, or admin/dispatcher — same rule as viewing the journey itself
+        $this->authorize('view', $journey);
 
         return \App\Http\Resources\VehicleDocumentResource::collection(
             $journey->vehicle->documents
         );
     }
-    
 }

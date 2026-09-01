@@ -32,22 +32,18 @@ class VehicleController extends Controller
     {
         $vehicle = $this->vehicles->create($request->user()->company, $request->validated());
 
-        return (new VehicleResource($vehicle))
-            ->response()
-            ->setStatusCode(201);
+        return (new VehicleResource($vehicle))->response()->setStatusCode(201);
     }
 
     public function show(Vehicle $vehicle)
     {
         $this->authorize('view', $vehicle);
 
-        return new VehicleResource($vehicle->load('assignedDriver'));
+        return new VehicleResource($vehicle);
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
     {
-        // $this->authorize('update',$vehicle);
-
         $vehicle = $this->vehicles->update($vehicle, $request->validated());
 
         return new VehicleResource($vehicle);
@@ -67,20 +63,22 @@ class VehicleController extends Controller
         $this->authorize('view', $vehicle);
 
         $vehicle->load([
-            'journeys' => fn ($q) => $q->with('driver')->latest('start_time')->limit(50),
-            'fuelEntries' => fn ($q) => $q->latest('entry_time')->limit(50),
+            'journeys' => fn ($q) => $q->with(['driver', 'fuelEntries'])->latest('start_time')->limit(50),
+            'fuelEntries' => fn ($q) => $q->with('journey:id')->latest('entry_time')->limit(50),
             'maintenanceRecords' => fn ($q) => $q->latest('service_date')->limit(50),
             'documents',
         ]);
 
-        $totalDistance = (float) $vehicle->journeys()
-            ->where('status', 'completed')
-            ->sum('total_distance');
-
+        $totalDistance = (float) $vehicle->journeys()->where('status', 'completed')->sum('total_distance');
         $totalFuelLitres = (float) $vehicle->fuelEntries()->sum('quantity_litres');
         $totalFuelCost = (float) $vehicle->fuelEntries()->sum('total_cost');
 
         $avgKmpl = $totalFuelLitres > 0 ? round($totalDistance / $totalFuelLitres, 2) : null;
+
+        $mileageVariancePercent = null;
+        if ($avgKmpl !== null && $vehicle->mileage_rated > 0) {
+            $mileageVariancePercent = round((($avgKmpl - $vehicle->mileage_rated) / $vehicle->mileage_rated) * 100, 1);
+        }
 
         return response()->json([
             'vehicle' => new VehicleResource($vehicle),
@@ -92,6 +90,7 @@ class VehicleController extends Controller
             'total_fuel_litres' => $totalFuelLitres,
             'total_fuel_cost' => $totalFuelCost,
             'avg_kmpl' => $avgKmpl,
+            'mileage_variance_percent' => $mileageVariancePercent,
         ]);
     }
 }

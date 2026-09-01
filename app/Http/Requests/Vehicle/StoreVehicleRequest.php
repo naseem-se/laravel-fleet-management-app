@@ -30,10 +30,8 @@ class StoreVehicleRequest extends FormRequest
             'fuel_type' => ['nullable', 'string', 'in:petrol,diesel,cng,electric,hybrid'],
             'tank_capacity_litres' => ['nullable', 'numeric', 'min:0'],
             'current_odometer' => ['nullable', 'numeric', 'min:0'],
-            // 'assigned_driver_id' => [
-            //     'nullable', 'integer',
-            //     Rule::exists('drivers', 'id')->where('company_id', $companyId),
-            // ],
+            'current_fuel_litres' => ['nullable', 'numeric', 'min:0'],
+            'mileage_rated' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

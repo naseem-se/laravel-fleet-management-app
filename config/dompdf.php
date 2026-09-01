@@ -21,6 +21,8 @@ return [
     'convert_entities' => true,
 
     'options' => [
+
+        'pdfBackend' => 'CPDF',
         /**
          * The location of the DOMPDF font directory
          *

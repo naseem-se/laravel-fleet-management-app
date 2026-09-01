@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exports\FleetSummaryExport;
 use App\Exports\FuelReportExport;
 use App\Exports\MaintenanceReportExport;
-use App\Exports\VehicleJourneysExport;
+use App\Exports\VehicleReportExport;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use App\Models\Vehicle;
@@ -37,10 +37,19 @@ class ReportController extends Controller
             [$from, $to] = $this->period($request);
             $data = $this->reports->vehicleReport($vehicle, $from, $to);
 
-            return $this->respond($request, $data, 'reports.vehicle',
-                fn () => new VehicleJourneysExport($data['journeys']),
-                "vehicle-{$vehicle->registration_number}-report"
-            );
+            return match ($request->input('format')) {
+                'pdf' => Pdf::loadView('reports.vehicle', ['data' => $data])
+                    ->setPaper('a4', 'landscape')
+                    ->setOptions([
+                        'isHtml5ParserEnabled' => true,
+                        'isPhpEnabled' => false,
+                        'isRemoteEnabled' => true, // only if you load remote images
+                        'defaultPaperSize' => 'a4',
+                    ])
+                    ->download("vehicle-{$vehicle->registration_number}-report.pdf"),
+                'xlsx' => Excel::download(new VehicleReportExport($data), "vehicle-{$vehicle->registration_number}-report.xlsx"),
+                default => response()->json($data),
+            };
         }, 'vehicle report');
     }
 
@@ -60,8 +69,6 @@ class ReportController extends Controller
         $this->authorize('viewAny', \App\Models\FuelEntry::class);
 
         return $this->safely(function () use ($request) {
-            // Was: fuelReport(...$this->period($request), $request->input('vehicle_id'))
-            // — a positional argument after array unpacking is a PHP fatal error.
             [$from, $to] = $this->period($request);
             $data = $this->reports->fuelReport($from, $to, $request->input('vehicle_id'));
 
@@ -98,8 +105,7 @@ class ReportController extends Controller
             $data = $this->reports->fleetSummary($month);
 
             if ($request->input('format') === 'pdf') {
-                return Pdf::loadView('reports.fleet-summary', ['data' => $data])
-                    ->download("fleet-summary-{$month}.pdf");
+                return Pdf::loadView('reports.fleet-summary', ['data' => $data])->download("fleet-summary-{$month}.pdf");
             }
 
             if ($request->input('format') === 'xlsx') {
@@ -110,6 +116,26 @@ class ReportController extends Controller
         }, 'fleet summary');
     }
 
+    public function queueExport(Request $request)
+    {
+        $this->authorize('viewAny', Vehicle::class);
+
+        $request->validate([
+            'report_type' => ['required', 'in:fleet-summary,fuel,maintenance'],
+            'format' => ['required', 'in:pdf,xlsx'],
+        ]);
+
+        \App\Jobs\GenerateReportExport::dispatch(
+            $request->user()->id,
+            $request->user()->company_id,
+            $request->input('report_type'),
+            $request->input('format'),
+            $request->only(['month', 'from', 'to', 'vehicle_id'])
+        );
+
+        return response()->json(['message' => 'Report is being generated. You will be notified when it is ready.']);
+    }
+
     protected function period(Request $request): array
     {
         return [
@@ -118,50 +144,6 @@ class ReportController extends Controller
         ];
     }
 
-    protected function respond(Request $request, array $data, string $view, callable $exportFactory, string $filename)
-    {
-        return match ($request->input('format')) {
-            'pdf' => Pdf::loadView($view, ['data' => $data])->download("{$filename}.pdf"),
-            'xlsx' => Excel::download($exportFactory(), "{$filename}.xlsx"),
-            default => response()->json($data),
-        };
-    }
-
-    public static function photoDataUri(?string $storagePath): ?string
-    {
-        if (! $storagePath) {
-            return null;
-        }
-
-        try {
-            $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'));
-            if (! $disk->exists($storagePath)) {
-                return null;
-            }
-
-            $contents = $disk->get($storagePath);
-
-            $mime = null;
-            if (method_exists($disk, 'mimeType')) {
-                $mime = $disk->mimeType($storagePath);
-            } elseif (method_exists($disk, 'getMimeType')) {
-                $mime = $disk->getMimeType($storagePath);
-            }
-
-            if (! $mime && method_exists($disk, 'path')) {
-                $localPath = $disk->path($storagePath);
-                if (is_file($localPath)) {
-                    $mime = mime_content_type($localPath);
-                }
-            }
-
-            return 'data:'.($mime ?: 'image/jpeg').';base64,'.base64_encode($contents);
-        } catch (Throwable $e) {
-            return null;
-        }
-    }
-
-    /** Guarantees a real JSON error response (with CORS headers intact) and a logged stack trace instead of a raw PHP fatal. */
     protected function safely(callable $action, string $context)
     {
         $previousDisplayErrors = ini_get('display_errors');
@@ -171,9 +153,7 @@ class ReportController extends Controller
             return $action();
         } catch (Throwable $e) {
             Log::error("Report generation failed: {$context}", [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+                'message' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine(),
             ]);
 
             return response()->json([

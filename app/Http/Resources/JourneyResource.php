@@ -8,7 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class JourneyResource extends JsonResource
 {
-    protected function clean($value)
+    protected function clean(mixed $value): mixed
     {
         if (is_string($value) && in_array(strtolower(trim($value)), ['undefined', 'null'], true)) {
             return null;
@@ -25,9 +25,6 @@ class JourneyResource extends JsonResource
             'detail_of_journey' => $this->clean($this->detail_of_journey),
             'officer_name' => $this->clean($this->officer_name),
             'signature' => $this->clean($this->signature),
-            'pol_drawn' => $this->pol_drawn,
-            'pol_invoice_photo_url' => FileUrl::for($this->pol_invoice_photo_path),
-            'remarks' => $this->clean($this->remarks),
             'vehicle' => $this->whenLoaded('vehicle', fn () => [
                 'id' => $this->vehicle->id,
                 'registration_number' => $this->vehicle->registration_number,
@@ -53,6 +50,7 @@ class JourneyResource extends JsonResource
             ]),
             'total_distance' => $this->total_distance,
             'duration_minutes' => $this->duration_minutes,
+            'fuel_entries' => FuelEntryResource::collection($this->whenLoaded('fuelEntries')),
             'last_location' => $this->whenLoaded('vehicle', fn () => $this->vehicle->last_location_at ? [
                 'lat' => (float) $this->vehicle->last_lat,
                 'lng' => (float) $this->vehicle->last_lng,

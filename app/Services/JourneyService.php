@@ -115,12 +115,6 @@ class JourneyService
             $endPhotoPath = $this->storePhoto($data['photo'], $journey->company_id, 'journeys/end');
             $endTime = now();
 
-            $polDrawn = isset($data['pol_drawn']) ? (float) $data['pol_drawn'] : 0;
-            $polInvoicePath = null;
-            if ($polDrawn > 0 && isset($data['pol_invoice_photo'])) {
-                $polInvoicePath = $this->storePhoto($data['pol_invoice_photo'], $journey->company_id, 'journeys/pol-invoices');
-            }
-
             $journey->update([
                 'status' => 'completed',
                 'end_km' => $data['end_km'],
@@ -131,9 +125,6 @@ class JourneyService
                 'total_distance' => $data['end_km'] - $journey->start_km,
                 'duration_minutes' => $journey->start_time->diffInMinutes($endTime),
                 'signature' => $data['signature'] ?? null,
-                'pol_drawn' => $polDrawn,
-                'pol_invoice_photo_path' => $polInvoicePath,
-                'remarks' => $data['remarks'] ?? null,
             ]);
 
             $journey->vehicle()->update(['current_odometer' => $data['end_km']]);
@@ -144,12 +135,34 @@ class JourneyService
         });
     }
 
+    /** Admin correction of a journey's descriptive/logbook fields, after the fact. Recomputes distance/duration if either odometer reading changes. */
+    public function updateDetails(Journey $journey, array $data): Journey
+    {
+        return DB::transaction(function () use ($journey, $data) {
+            $journey->fill($data);
+
+            if (array_key_exists('start_km', $data) || array_key_exists('end_km', $data)) {
+                if ($journey->end_km !== null && $journey->start_km !== null) {
+                    if ((float) $journey->end_km < (float) $journey->start_km) {
+                        throw ValidationException::withMessages([
+                            'end_km' => ['End odometer cannot be less than start odometer.'],
+                        ]);
+                    }
+                    $journey->total_distance = $journey->end_km - $journey->start_km;
+                }
+            }
+
+            $journey->save();
+
+            return $journey->fresh(['vehicle', 'driver', 'fuelEntries']);
+        });
+    }
+
     public function delete(Journey $journey): void
     {
         DB::transaction(function () use ($journey) {
             $this->deletePhoto($journey->start_photo_path);
             $this->deletePhoto($journey->end_photo_path);
-            $this->deletePhoto($journey->pol_invoice_photo_path);
 
             foreach ($journey->fuelEntries as $fuelEntry) {
                 $this->deletePhoto($fuelEntry->receipt_photo_path);

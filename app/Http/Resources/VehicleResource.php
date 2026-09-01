@@ -22,19 +22,16 @@ class VehicleResource extends JsonResource
             'fuel_type' => $this->fuel_type,
             'tank_capacity_litres' => $this->tank_capacity_litres,
             'current_odometer' => $this->current_odometer,
+            'current_fuel_litres' => $this->current_fuel_litres,
+            'mileage_rated' => $this->mileage_rated,
             'avg_kmpl_cached' => $this->avg_kmpl_cached,
             'status' => $this->status,
             'last_location' => $this->when($this->last_location_at, [
-                'lat' => (float) $this->last_lat,
-                'lng' => (float) $this->last_lng,
+                'lat' => $this->last_lat !== null ? (float) $this->last_lat : null,
+                'lng' => $this->last_lng !== null ? (float) $this->last_lng : null,
                 'recorded_at' => $this->last_location_at,
                 'accuracy_meters' => $this->last_accuracy_meters !== null ? (float) $this->last_accuracy_meters : null,
             ]),
-            // 'assigned_driver' => $this->whenLoaded('assignedDriver', fn () => [
-            //     'id' => $this->assignedDriver->id,
-            //     'name' => $this->assignedDriver->name,
-            //     'phone' => $this->assignedDriver->phone,
-            // ]),
             'created_at' => $this->created_at,
         ];
     }
