@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exports\DriverReportExport;
 use App\Exports\FleetSummaryExport;
 use App\Exports\FuelReportExport;
 use App\Exports\MaintenanceReportExport;
@@ -40,12 +41,6 @@ class ReportController extends Controller
             return match ($request->input('format')) {
                 'pdf' => Pdf::loadView('reports.vehicle', ['data' => $data])
                     ->setPaper('a4', 'landscape')
-                    ->setOptions([
-                        'isHtml5ParserEnabled' => true,
-                        'isPhpEnabled' => false,
-                        'isRemoteEnabled' => true, // only if you load remote images
-                        'defaultPaperSize' => 'a4',
-                    ])
                     ->download("vehicle-{$vehicle->registration_number}-report.pdf"),
                 'xlsx' => Excel::download(new VehicleReportExport($data), "vehicle-{$vehicle->registration_number}-report.xlsx"),
                 default => response()->json($data),
@@ -59,8 +54,13 @@ class ReportController extends Controller
 
         return $this->safely(function () use ($request, $driver) {
             [$from, $to] = $this->period($request);
+            $data = $this->reports->driverReport($driver, $from, $to);
 
-            return response()->json($this->reports->driverReport($driver, $from, $to));
+            if ($request->input('format') === 'xlsx') {
+                return Excel::download(new DriverReportExport($data), "driver-{$driver->name}-report.xlsx");
+            }
+
+            return response()->json($data);
         }, 'driver report');
     }
 
@@ -73,7 +73,7 @@ class ReportController extends Controller
             $data = $this->reports->fuelReport($from, $to, $request->input('vehicle_id'));
 
             if ($request->input('format') === 'xlsx') {
-                return Excel::download(new FuelReportExport($data['entries']), 'fuel-report.xlsx');
+                return Excel::download(new FuelReportExport($data), 'fuel-report.xlsx');
             }
 
             return response()->json($data);
@@ -89,7 +89,7 @@ class ReportController extends Controller
             $data = $this->reports->maintenanceReport($from, $to, $request->input('vehicle_id'));
 
             if ($request->input('format') === 'xlsx') {
-                return Excel::download(new MaintenanceReportExport($data['records']), 'maintenance-report.xlsx');
+                return Excel::download(new MaintenanceReportExport($data), 'maintenance-report.xlsx');
             }
 
             return response()->json($data);

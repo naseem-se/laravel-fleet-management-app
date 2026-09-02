@@ -28,10 +28,8 @@ class MaintenanceService
     {
         return DB::transaction(function () use ($data) {
             $record = MaintenanceRecord::create($data);
-
             $this->syncReminder($record);
-
-            return $record;
+            return $record->load('vehicle');
         });
     }
 
@@ -39,10 +37,8 @@ class MaintenanceService
     {
         return DB::transaction(function () use ($record, $data) {
             $record->update($data);
-
             $this->syncReminder($record);
-
-            return $record->fresh();
+            return $record->fresh('vehicle');
         });
     }
 
@@ -58,10 +54,6 @@ class MaintenanceService
         });
     }
 
-    /**
-     * Keeps a single pending reminder row in sync with this record's next
-     * due date/km, rather than letting them drift or duplicate on edit.
-     */
     protected function syncReminder(MaintenanceRecord $record): void
     {
         Reminder::where('reminder_type', 'maintenance')

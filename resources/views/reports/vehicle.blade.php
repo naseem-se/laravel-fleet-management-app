@@ -19,7 +19,6 @@
         .link { color: #1d4ed8; text-decoration: underline; }
         .no-data { color: #aaa; font-style: italic; }
         .footer-note { margin-top: 16px; font-size: 8px; color: #888; }
-        .anchor { display: inline-block; }
     </style>
 </head>
 <body>
@@ -40,11 +39,9 @@
         <tr>
             <td><span class="summary-label">Total Fuel Cost</span><span class="summary-value">{{ number_format($data['total_fuel_cost'] ?? 0, 2) }}</span></td>
             <td><span class="summary-label">Actual Fuel Efficiency</span><span class="summary-value">{{ $data['kmpl'] ?? '-' }} km/L</span></td>
-            <td colspan="2"><span class="summary-label">Total Maintenance Cost (this period)</span><span class="summary-value">{{ number_format($data['total_maintenance_cost'] ?? 0, 2) }}</span></td>
-
-            {{-- <td><span class="summary-label">Rated Fuel Efficiency</span><span class="summary-value">{{ $data['mileage_rated'] ?? '-' }} km/L</span></td> --}}
+            <td><span class="summary-label">Rated Fuel Efficiency</span><span class="summary-value">{{ $data['mileage_rated'] ?? '-' }} km/L</span></td>
         </tr>
-        {{-- <tr>
+        <tr>
             <td>
                 <span class="summary-label">Efficiency vs. Rated</span>
                 <span class="summary-value">
@@ -58,7 +55,7 @@
                 </span>
             </td>
             <td colspan="2"><span class="summary-label">Total Maintenance Cost (this period)</span><span class="summary-value">{{ number_format($data['total_maintenance_cost'] ?? 0, 2) }}</span></td>
-        </tr> --}}
+        </tr>
     </table>
 
     <h2>Journey Log</h2>
@@ -75,19 +72,18 @@
                 <th>KM Covered</th>
                 <th>Signature</th>
                 <th>Photos</th>
+                <th>Fuel Logged</th>
             </tr>
             <tr>
                 <th></th><th>From</th><th>To</th><th></th><th></th><th></th><th></th>
-                <th>From</th><th>To</th><th></th><th></th><th></th>
+                <th>From</th><th>To</th><th></th><th></th><th></th><th></th>
             </tr>
         </thead>
         <tbody>
             @forelse ($data['journeys'] as $journey)
+                <a name="journey-{{ $journey->id }}"></a>
                 <tr>
-                    <td>
-                        <a class="anchor" name="journey-{{ $journey->id }}">&nbsp;</a>
-                        {{ optional($journey->start_time)->format('Y-m-d') ?? '-' }}
-                    </td>
+                    <td>{{ optional($journey->start_time)->format('Y-m-d') ?? '-' }}</td>
                     <td>{{ $journey->start_time ? $journey->start_time->format('h:i A') : '-' }}</td>
                     <td>{{ $journey->end_time ? $journey->end_time->format('h:i A') : '-' }}</td>
                     <td>{{ $journey->driver_name }}</td>
@@ -110,9 +106,16 @@
                             <span class="no-data">No end photo</span>
                         @endif
                     </td>
+                    <td>
+                        @forelse ($journey->linked_fuel_ids as $fuelId)
+                            <a class="link" href="#fuel-{{ $fuelId }}">View Fuel Entry</a><br>
+                        @empty
+                            <span class="no-data">None logged</span>
+                        @endforelse
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="12" class="no-data">No journeys recorded in this period.</td></tr>
+                <tr><td colspan="13" class="no-data">No journeys recorded in this period.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -133,11 +136,9 @@
         </thead>
         <tbody>
             @forelse ($data['fuel_entries'] as $entry)
+                <a name="fuel-{{ $entry->id }}"></a>
                 <tr>
-                    <td>
-                        <a class="anchor" name="fuel-{{ $entry->id }}">&nbsp;</a>
-                        {{ optional($entry->entry_time)->format('Y-m-d h:i A') ?? '-' }}
-                    </td>
+                    <td>{{ optional($entry->entry_time)->format('Y-m-d h:i A') ?? '-' }}</td>
                     <td>{{ $entry->driver?->name ?? '-' }}</td>
                     <td>{{ $entry->quantity_litres }}</td>
                     <td>{{ $entry->rate_per_litre }}</td>
@@ -165,7 +166,7 @@
     </table>
 
     <p class="footer-note">
-        Clicking "View Trip" jumps to that journey's row in the Journey Log above (supported in most desktop PDF viewers).
+        "View Trip" and "View Fuel Entry" links jump directly to the matching row in this document. Photo/receipt links open the actual file in your browser.
     </p>
 </body>
 </html>

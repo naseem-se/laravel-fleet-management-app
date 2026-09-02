@@ -32,16 +32,14 @@ class MaintenanceRecordController extends Controller
     {
         $record = $this->maintenance->create($request->validated());
 
-        return (new MaintenanceRecordResource($record))
-            ->response()
-            ->setStatusCode(201);
+        return (new MaintenanceRecordResource($record))->response()->setStatusCode(201);
     }
 
     public function show(MaintenanceRecord $maintenanceRecord)
     {
         $this->authorize('view', $maintenanceRecord);
 
-        return new MaintenanceRecordResource($maintenanceRecord);
+        return new MaintenanceRecordResource($maintenanceRecord->load('vehicle'));
     }
 
     public function update(UpdateMaintenanceRecordRequest $request, MaintenanceRecord $maintenanceRecord)
@@ -60,18 +58,31 @@ class MaintenanceRecordController extends Controller
         return response()->json(['message' => 'Maintenance record deleted.']);
     }
 
-    /** Fleet-wide upcoming maintenance, for the dashboard alerts widget. */
+    /** Fleet-wide items due soon OR already overdue — the dashboard/list alert feed. */
     public function upcoming(Request $request)
     {
         $this->authorize('viewAny', MaintenanceRecord::class);
 
         $withinDays = (int) $request->input('days', 30);
 
-        $records = MaintenanceRecord::whereNotNull('next_service_date')
-            ->whereDate('next_service_date', '<=', now()->addDays($withinDays))
+        $records = MaintenanceRecord::where(function ($q) use ($withinDays) {
+                $q->whereNotNull('next_service_date')->whereDate('next_service_date', '<=', now()->addDays($withinDays));
+            })
+            ->orWhereHas('vehicle', function ($q) {
+            })
             ->with('vehicle')
             ->orderBy('next_service_date')
-            ->get();
+            ->get()
+            ->filter(function ($record) {
+                if ($record->next_service_date && $record->next_service_date->lessThanOrEqualTo(now()->addDays(30))) {
+                    return true;
+                }
+                if ($record->next_service_km && $record->vehicle) {
+                    return ($record->next_service_km - $record->vehicle->current_odometer) <= 1000;
+                }
+                return false;
+            })
+            ->values();
 
         return MaintenanceRecordResource::collection($records);
     }

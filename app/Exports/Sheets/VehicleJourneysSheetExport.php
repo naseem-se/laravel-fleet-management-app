@@ -33,7 +33,7 @@ class VehicleJourneysSheetExport implements FromCollection, WithHeadings, WithMa
         return [
             'Date', 'Time From', 'Time To', 'Driver', 'Detail of Journey', 'Purpose of Journey',
             'Officer/Official', 'Meter From', 'Meter To', 'KM Covered', 'Signature',
-            'Start Photo', 'End Photo', 'Linked Fuel Entry',
+            'Start Photo', 'End Photo', 'Fuel Logged',
         ];
     }
 
@@ -53,7 +53,7 @@ class VehicleJourneysSheetExport implements FromCollection, WithHeadings, WithMa
             $journey->signature_display,
             $journey->start_photo_url ? 'View Photo' : 'No photo',
             $journey->end_photo_url ? 'View Photo' : 'No photo',
-            '', // Linked Fuel Entry — hyperlink set below, text set there too
+            '', // filled in below — a real clickable link to the Fuel Purchases sheet
         ];
     }
 
@@ -62,6 +62,7 @@ class VehicleJourneysSheetExport implements FromCollection, WithHeadings, WithMa
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
+                $fuelRowsById = $this->fuelEntries->values()->mapWithKeys(fn ($f, $i) => [$f->id => $i + 2]);
 
                 foreach ($this->journeys->values() as $index => $journey) {
                     $row = $index + 2;
@@ -73,16 +74,19 @@ class VehicleJourneysSheetExport implements FromCollection, WithHeadings, WithMa
                         $sheet->getCell("M{$row}")->getHyperlink()->setUrl($journey->end_photo_url);
                     }
 
-                    $matchingFuel = $this->fuelEntries->firstWhere('linked_journey_id', $journey->id);
-                    if ($matchingFuel) {
-                        $fuelRowIndex = $this->fuelEntries->values()->search(fn ($f) => $f->id === $matchingFuel->id);
-                        $fuelRow = $fuelRowIndex + 2;
-
-                        $cell = $sheet->getCell("N{$row}");
-                        $cell->setValue('View Fuel Entry');
-                        $cell->getHyperlink()->setUrl("sheet://'Fuel Purchases'!A{$fuelRow}");
+                    $linkedFuelIds = $journey->linked_fuel_ids ?? collect();
+                    if ($linkedFuelIds->isNotEmpty()) {
+                        $firstFuelRow = $fuelRowsById[$linkedFuelIds->first()] ?? null;
+                        if ($firstFuelRow) {
+                            $cell = $sheet->getCell("N{$row}");
+                            $label = $linkedFuelIds->count() > 1
+                                ? 'View Fuel Entries ('.$linkedFuelIds->count().')'
+                                : 'View Fuel Entry';
+                            $cell->setValue($label);
+                            $cell->getHyperlink()->setUrl("sheet://'Fuel Purchases'!A{$firstFuelRow}");
+                        }
                     } else {
-                        $sheet->getCell("N{$row}")->setValue('No fuel logged');
+                        $sheet->getCell("N{$row}")->setValue('None logged');
                     }
                 }
 

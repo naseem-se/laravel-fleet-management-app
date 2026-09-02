@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class VehicleFuelSheetExport implements FromCollection, WithHeadings, WithMapping, WithTitle, WithEvents
+class DriverFuelSheetExport implements FromCollection, WithHeadings, WithMapping, WithTitle, WithEvents
 {
     public function __construct(
         protected Collection $fuelEntries,
@@ -25,27 +25,23 @@ class VehicleFuelSheetExport implements FromCollection, WithHeadings, WithMappin
 
     public function title(): string
     {
-        return 'Fuel Purchases';
+        return 'Fuel Entries';
     }
 
     public function headings(): array
     {
-        return [
-            'Date', 'Driver', 'Litres', 'Rate/Litre', 'Total Cost',
-            'Odometer at Purchase', 'Linked Trip', 'Receipt',
-        ];
+        return ['Date', 'Vehicle', 'Litres', 'Rate/Litre', 'Total Cost', 'Linked Trip', 'Receipt'];
     }
 
     public function map($entry): array
     {
         return [
             optional($entry->entry_time)->format('Y-m-d h:i A') ?? '-',
-            $entry->driver?->name ?? '-',
+            $entry->vehicle->registration_number ?? '-',
             $entry->quantity_litres,
             $entry->rate_per_litre,
             $entry->total_cost,
-            $entry->odometer_reading,
-            '', // filled below — real clickable link to the Journey Log sheet
+            '',
             $entry->receipt_url ? 'View Receipt' : 'No receipt',
         ];
     }
@@ -61,21 +57,21 @@ class VehicleFuelSheetExport implements FromCollection, WithHeadings, WithMappin
                     $row = $index + 2;
 
                     if ($entry->receipt_url) {
-                        $sheet->getCell("H{$row}")->getHyperlink()->setUrl($entry->receipt_url);
+                        $sheet->getCell("G{$row}")->getHyperlink()->setUrl($entry->receipt_url);
                     }
 
                     if ($entry->linked_journey_id && isset($journeyRowsById[$entry->linked_journey_id])) {
                         $journeyRow = $journeyRowsById[$entry->linked_journey_id];
-                        $cell = $sheet->getCell("G{$row}");
+                        $cell = $sheet->getCell("F{$row}");
                         $cell->setValue('View Trip ('.$entry->linked_journey_date.')');
-                        $cell->getHyperlink()->setUrl("sheet://'Journey Log'!A{$journeyRow}");
+                        $cell->getHyperlink()->setUrl("sheet://'Journeys'!A{$journeyRow}");
                     } else {
-                        $sheet->getCell("G{$row}")->setValue('Not linked to a trip');
+                        $sheet->getCell("F{$row}")->setValue('Not linked');
                     }
                 }
 
-                $sheet->getColumnDimension('G')->setWidth(24);
-                $sheet->getColumnDimension('H')->setWidth(16);
+                $sheet->getColumnDimension('F')->setWidth(22);
+                $sheet->getColumnDimension('G')->setWidth(16);
             },
         ];
     }
